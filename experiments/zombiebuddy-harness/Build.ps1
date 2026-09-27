@@ -24,6 +24,7 @@ if($LASTEXITCODE -ne 0) { throw 'Harness packaging failed.' }
 if($LASTEXITCODE -ne 0) { throw 'OpenXR dependency bundling failed.' }
 if(Test-Path "$PSScriptRoot\README.md") { Copy-Item "$PSScriptRoot\README.md" "$package\README.md" -Force }
 Copy-Item "$PSScriptRoot\SimulatedRuntime.ps1","$PSScriptRoot\RuntimeKeepalive.py","$PSScriptRoot\HeadsetWindow.py","$PSScriptRoot\THIRD_PARTY.md" $package -Force
+Copy-Item "$PSScriptRoot\licenses" $package -Recurse -Force
 $hash=Get-FileHash "$package\42.20.4\media\java\client\PZ3DVRTest.jar" -Algorithm SHA256
 "$($hash.Hash.ToLowerInvariant())  42.20.4/media/java/client/PZ3DVRTest.jar" | Set-Content "$PSScriptRoot\dist\SHA256.txt" -Encoding ASCII
 Copy-Item "$PSScriptRoot\dist\SHA256.txt" "$package\SHA256.txt" -Force

@@ -1,5 +1,7 @@
 # OpenXR dependencies
 
+The release includes upstream license texts in `licenses/`: `LWJGL-LICENSE.md` (LWJGL 3.4.1) and `OpenXR-SDK-LICENSE.txt` (Apache 2.0). These apply to the bundled dependencies, not a license grant for game/mod material or the original prototype code.
+
 This local prototype bundles the existing pinned LWJGL OpenXR 3.4.1 Java bindings and Windows x64 native-loader artifact. The game's LWJGL core, GLFW, OpenGL, and JOML are reused and are not redistributed in the mod JAR. No proprietary game or PZ3D class is packaged.
 
 | Artifact | SHA-256 |

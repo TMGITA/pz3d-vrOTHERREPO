@@ -16,7 +16,7 @@ Obtain these separately. This repository contains the prototype source and synth
 
 ## Using the prototype
 
-See the [mod instructions](experiments/zombiebuddy-harness/README.md) for installation, runtime setup, controls, and limitations. This initial repository publishes source; build the ZIP using the steps below.
+See the [mod instructions](experiments/zombiebuddy-harness/README.md) for installation, runtime setup, controls, and limitations. Download the mod ZIP from the [v0.4.0 prerelease](https://github.com/kilroy94/pz3d-vr/releases/tag/v0.4.0), or build it using the steps below.
 
 | Shortcut | Action |
 |---|---|
