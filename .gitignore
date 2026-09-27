@@ -1,0 +1,30 @@
+# Local proprietary reference material and downloaded tools are not publication artifacts.
+reference/
+external/tools/*.jar
+external/tools/*.zip
+external/tools/jdk25/
+external/openxr/*.jar
+external/openxr/sources/
+research/evidence/
+__pycache__/
+*.pyc
+experiments/openxr-diagnostic/lib/
+experiments/openxr-diagnostic/build/
+experiments/openxr-diagnostic/runs/
+experiments/pz3d-adapter/build/
+experiments/zombiebuddy-harness/build/
+experiments/zombiebuddy-harness/dist/
+
+# Local tooling, editor state, attachments, and credentials.
+/external/
+/.vscode/
+/.codex/
+/.agents/
+*.code-workspace
+/research/original-request.md
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.log

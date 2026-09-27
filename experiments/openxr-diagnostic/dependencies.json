@@ -1,0 +1,48 @@
+{
+    "jdk":  {
+                "sha256":  "00c847d804f4a78e9f04f2683faf14fed898535b177b7fc704486cb0284e9283",
+                "url":  "https://github.com/adoptium/temurin25-binaries/releases/download/jdk-25.0.4.1%2B1/OpenJDK25U-jdk_x64_windows_hotspot_25.0.4.1_1.zip"
+            },
+    "libraries":  [
+                      {
+                          "url":  "https://repo.maven.apache.org/maven2/org/lwjgl/lwjgl/3.4.1/lwjgl-3.4.1-natives-windows.jar",
+                          "sha256":  "21872776b9be0a93c746d6f28797c12ac47a75e0f0188e5a4fad0c20c9a6a07e",
+                          "file":  "lwjgl-3.4.1-natives-windows.jar"
+                      },
+                      {
+                          "url":  "https://repo.maven.apache.org/maven2/org/lwjgl/lwjgl/3.4.1/lwjgl-3.4.1.jar",
+                          "sha256":  "9b1c3a3a078c2377219ecb8a2662730b3dece07c10592cf1d12f957286037b69",
+                          "file":  "lwjgl-3.4.1.jar"
+                      },
+                      {
+                          "url":  "https://repo.maven.apache.org/maven2/org/lwjgl/lwjgl-glfw/3.4.1/lwjgl-glfw-3.4.1-natives-windows.jar",
+                          "sha256":  "20adab06c8f5bf1e3515a7e64db261cd83ca8131d674dc5f0af93b514deedac8",
+                          "file":  "lwjgl-glfw-3.4.1-natives-windows.jar"
+                      },
+                      {
+                          "url":  "https://repo.maven.apache.org/maven2/org/lwjgl/lwjgl-glfw/3.4.1/lwjgl-glfw-3.4.1.jar",
+                          "sha256":  "c2d93964f0a8b2a846708c7fb1b0a095e7d79dce8ea4c543969ffef508027190",
+                          "file":  "lwjgl-glfw-3.4.1.jar"
+                      },
+                      {
+                          "url":  "https://repo.maven.apache.org/maven2/org/lwjgl/lwjgl-opengl/3.4.1/lwjgl-opengl-3.4.1-natives-windows.jar",
+                          "sha256":  "e174a206709a91c89a840b5d935831bdb386f435ed224e570a0f15b063b4d9b4",
+                          "file":  "lwjgl-opengl-3.4.1-natives-windows.jar"
+                      },
+                      {
+                          "url":  "https://repo.maven.apache.org/maven2/org/lwjgl/lwjgl-opengl/3.4.1/lwjgl-opengl-3.4.1.jar",
+                          "sha256":  "a76b8fd9ff7428ae5e0f01b8f91a4e44debba87285048e965757742093418702",
+                          "file":  "lwjgl-opengl-3.4.1.jar"
+                      },
+                      {
+                          "url":  "https://repo.maven.apache.org/maven2/org/lwjgl/lwjgl-openxr/3.4.1/lwjgl-openxr-3.4.1-natives-windows.jar",
+                          "sha256":  "2884e3449ac10e366cf80f9a2676e822d54bda7f50ff9a61d2d2d32821ee7ffd",
+                          "file":  "lwjgl-openxr-3.4.1-natives-windows.jar"
+                      },
+                      {
+                          "url":  "https://repo.maven.apache.org/maven2/org/lwjgl/lwjgl-openxr/3.4.1/lwjgl-openxr-3.4.1.jar",
+                          "sha256":  "184ff11f6140bc48b722b5dfadb1a9611dd9f7b4f18863f627581cdda8a055f2",
+                          "file":  "lwjgl-openxr-3.4.1.jar"
+                      }
+                  ]
+}

@@ -1,0 +1,47 @@
+package pzvr.harness;
+
+import java.lang.instrument.Instrumentation;
+import java.nio.file.*;
+import java.util.*;
+import java.util.jar.JarFile;
+import me.zed_0xff.zombie_buddy.Exposer.LuaClass;
+import me.zed_0xff.zombie_buddy.Loader;
+import pzvr.VersionGate;
+
+@LuaClass(name="PZVRStereo")
+public final class Main {
+    private static volatile Installation installation;
+    private static volatile String status="Not initialized";
+    private static boolean attempted;
+    public static synchronized void main(String[] args) {
+        if(attempted) return; attempted=true;
+        try {
+            if(zombie.network.GameServer.server || zombie.network.GameClient.client) throw new IllegalStateException("Single player only");
+            ClassLoader loader=Main.class.getClassLoader();
+            Class<?> frame=Class.forName("com.pavelvoronin.pz3d.Renderer$Frame",false,loader);
+            Path game=location(zombie.GameWindow.class), pz=location(frame), zb=location(Loader.class);
+            VersionGate.Verified verified=VersionGate.verify(game,pz,zb);
+            Map<String,byte[]> originals=new HashMap<>();
+            try(JarFile jar=new JarFile(pz.toFile())) {
+                for(String name:Installation.TARGETS) try(var in=jar.getInputStream(jar.getJarEntry(name+".class"))) { originals.put(name,in.readAllBytes()); }
+            }
+            var field=Loader.class.getDeclaredField("g_instrumentation"); field.setAccessible(true);
+            Instrumentation instrumentation=(Instrumentation)field.get(null);
+            if(instrumentation==null) throw new IllegalStateException("ZombieBuddy instrumentation unavailable");
+            Path output=Path.of(zombie.ZomboidFileSystem.instance.getCacheDir(),"PZ3D-VR-Test");
+            installation=Installation.install(instrumentation,loader,originals);
+            CaptureHarness.configure(verified,installation,output);
+            status="Ready: first person, on foot; Ctrl+Shift+Scroll Lock toggles OpenXR; Alt+Scroll Lock recenters, F9 desktop stereo, F10 capture (all Ctrl+Shift)";
+        } catch(Throwable error) {
+            status="Disabled: "+error; error.printStackTrace();
+        }
+        System.out.println("[PZ3D VR Test] "+status);
+    }
+    private static Path location(Class<?> type) throws Exception { return Path.of(type.getProtectionDomain().getCodeSource().getLocation().toURI()); }
+    public static String requestCapture() {
+        if(installation==null || !installation.ready()) return "Disabled: "+(installation==null?status:installation.failure());
+        return CaptureHarness.request();
+    }
+    public static void tickXR() { XrHarness.watchdog(); }
+    public static String status() { return installation!=null && installation.ready()?CaptureHarness.status():status; }
+}
