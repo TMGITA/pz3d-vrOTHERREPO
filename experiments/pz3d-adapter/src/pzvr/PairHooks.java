@@ -20,10 +20,14 @@ public final class PairHooks {
         void copy(int eye,int sourceFramebuffer,int width,int height);
         default void beginEye(int eye) {}
     }
+    @FunctionalInterface public interface PoseOverride { AutoCloseable apply(Object frame,Base base) throws Exception; }
     public record Result(int preparations,int copies,long sceneVersion,long frozenNanos,long generation,long preparedFingerprint) {}
 
     /** Caller owns the existing GL render thread. The original producer/retained scheduler is not replayed here. */
     public static Result render(VersionGate.Verified verified,Object frame,boolean fresh,EyeFactory factory,Sink sink) throws Exception {
+        return render(verified,frame,fresh,factory,sink,(f,b)->()->{});
+    }
+    public static Result render(VersionGate.Verified verified,Object frame,boolean fresh,EyeFactory factory,Sink sink,PoseOverride pose) throws Exception {
         Objects.requireNonNull(verified);
         if(!frame.getClass().getName().equals("com.pavelvoronin.pz3d.Renderer$Frame")) throw new IllegalArgumentException("Wrong frame class");
         if(CURRENT.get()!=null) throw new IllegalStateException("Nested stereo pair");
@@ -32,7 +36,7 @@ public final class PairHooks {
         Class<?> renderThread=Class.forName("zombie.core.opengl.RenderThread",false,loader);
         if(getStatic(renderThread,"renderThread")!=Thread.currentThread() || getStatic(renderThread,"contextThread")!=Thread.currentThread())
             throw new IllegalStateException("Must run on the existing game render/context thread");
-        State s=new State(frame,factory,sink);
+        State s=new State(frame,factory,sink,pose);
         Object lease=get(frame,"lease");
         call(lease,"retain");
         try {
@@ -41,7 +45,8 @@ public final class PairHooks {
             if(s.failure!=null || s.preparations!=1 || s.copies!=2 || !s.finished) throw new IllegalStateException("Pair incomplete: boundary="+s.preparations+", copies="+s.copies+"; original draw may have failed or skipped",s.failure);
             return new Result(s.preparations,s.copies,s.sceneVersion,s.time,((Number)get(frame,"generation")).longValue(),s.fingerprint);
         } finally {
-            try { restore(s); } finally { CURRENT.remove(); call(lease,"release"); }
+            try { if(s.poseScope!=null) s.poseScope.close(); }
+            finally { try { restore(s); } finally { CURRENT.remove(); call(lease,"release"); } }
         }
     }
 
@@ -81,10 +86,14 @@ public final class PairHooks {
         if(s.frame!=frame || ++s.preparations!=1) throw new IllegalStateException("Preparation ownership violation");
         s.base=new float[]{number(frame,"x"),number(frame,"y"),number(frame,"z")};
         s.scene=get(frame,"scene"); s.sceneVersion=((Number)call(s.scene,"version")).longValue();
-        s.fingerprint=fingerprint(frame);
+
         Class<?> renderer=frame.getClass().getEnclosingClass();
         s.width=(int)getStatic(renderer,"width"); s.height=(int)getStatic(renderer,"height");
-        s.eyes=List.copyOf(s.factory.create(new Base(s.base[0],s.base[1],s.base[2],number(frame,"dx"),number(frame,"dy"),number(frame,"dz"),number(frame,"fov"),s.width,s.height)));
+        Base base=new Base(s.base[0],s.base[1],s.base[2],number(frame,"dx"),number(frame,"dy"),number(frame,"dz"),number(frame,"fov"),s.width,s.height);
+        s.eyes=List.copyOf(s.factory.create(base));
+        try { s.poseScope=s.pose.apply(frame,base); }
+        catch(Exception failure) { throw new IllegalStateException("Pose override failed",failure); }
+        s.fingerprint=fingerprint(frame);
         if(s.eyes.size()!=2) throw new IllegalArgumentException("Exactly two views required");
         for(Eye e:s.eyes) if(!Float.isFinite(e.x)||!Float.isFinite(e.y)||!Float.isFinite(e.z)||!e.viewProjection.isFinite()) throw new IllegalArgumentException("Invalid eye");
     }
@@ -144,8 +153,8 @@ public final class PairHooks {
     private static void set(Object o,String name,float v) { try { field(o.getClass(),name).setFloat(o,v); } catch(IllegalAccessException e) { throw new IllegalStateException(e); } }
     private static Object call(Object o,String name) { try { Method m=o.getClass().getDeclaredMethod(name); m.setAccessible(true); return m.invoke(o); } catch(ReflectiveOperationException e) { throw new IllegalStateException(e); } }
     private static final class State {
-        final Object frame; final EyeFactory factory; final Sink sink; final long time=System.nanoTime();
+        final Object frame; final EyeFactory factory; final Sink sink; final PoseOverride pose; AutoCloseable poseScope; final long time=System.nanoTime();
         List<Eye> eyes; float[] base; Object scene,treeEnvironment; Throwable failure; long sceneVersion,fingerprint; int width,height,eye,preparations,copies; boolean finished;
-        State(Object frame,EyeFactory factory,Sink sink) { this.frame=frame; this.factory=Objects.requireNonNull(factory); this.sink=Objects.requireNonNull(sink); }
+        State(Object frame,EyeFactory factory,Sink sink,PoseOverride pose) { this.pose=Objects.requireNonNull(pose); this.frame=frame; this.factory=Objects.requireNonNull(factory); this.sink=Objects.requireNonNull(sink); }
     }
 }

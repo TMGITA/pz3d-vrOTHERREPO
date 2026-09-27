@@ -37,6 +37,8 @@ public final class OpenXrSmokeTest {
                 for(int cycle=0;cycle<2;cycle++) {
                     final boolean[] injected={cycle!=0},uiFailure={cycle!=0};
                     try(OpenXrSession session=new OpenXrSession()) {
+                        var handsField=OpenXrSession.class.getDeclaredField("hands"); handsField.setAccessible(true);
+                        check(handsField.get(session)!=null,"Real grip action set/spaces created and attached");
                         boolean rejected=false;
                         try { session.copyUiTexture(texture,320,240); } catch(IllegalStateException expected) { rejected=true; }
                         check(rejected,"UI cannot acquire outside an XR frame");
@@ -45,6 +47,11 @@ public final class OpenXrSmokeTest {
                             glfwPollEvents();
                             try {
                                 session.frame((head,views,sink)-> {
+                                    check(handsField.get(session)!=null,"Grip synchronization has not failed");
+                                    for(int side=0;side<2;side++) {
+                                        var hand=session.hands().get(side);
+                                        check(hand==null||hand.matrix().isFinite(),"Missing controller safely native; tracked pose finite");
+                                    }
                                     check(views.size()==2 && head.matrix().isFinite(),"Runtime poses valid");
                                     for(int eye=0;eye<2;eye++) {
                                         glBindFramebuffer(GL_FRAMEBUFFER,fbo); glViewport(0,0,320,240);

@@ -16,7 +16,8 @@ public final class XrCamera {
         }
     }
     public record View(Pose pose,float left,float right,float up,float down) {}
-    private Matrix4f anchorInverse;
+    private Matrix4f anchorInverse,sceneFromLocal;
+    public Matrix4f sceneFromLocal() { return new Matrix4f(Objects.requireNonNull(sceneFromLocal)); }
     public void recenter() { anchorInverse=null; }
     public PairHooks.EyeFactory eyes(Pose head,List<View> views) {
         if(views.size()!=2) throw new IllegalArgumentException("Two eyes required");
@@ -25,6 +26,7 @@ public final class XrCamera {
         return base -> {
             Matrix4f baseCamera=new Matrix4f().lookAt(base.x(),-base.y(),base.z(),
                 base.x()+base.dx(),-base.y()-base.dy(),base.z()+base.dz(),0,0,1).invert();
+            sceneFromLocal=new Matrix4f().scaling(1,-1,1).mul(baseCamera).mul(anchor);
             List<PairHooks.Eye> result=new ArrayList<>();
             for(View eye:views) {
                 // Prototype scale: one scene unit per metre. Physical calibration remains pending.

@@ -31,7 +31,7 @@ public final class Main {
             Path output=Path.of(zombie.ZomboidFileSystem.instance.getCacheDir(),"PZ3D-VR-Test");
             installation=Installation.install(instrumentation,loader,originals);
             CaptureHarness.configure(verified,installation,output);
-            status="Ready: first person, on foot; Ctrl+Shift+Scroll Lock toggles OpenXR; Alt+Scroll Lock recenters, F9 desktop stereo, F10 capture (all Ctrl+Shift)";
+            status="Ready: first person, on foot; Ctrl+Shift+Scroll Lock toggles OpenXR; Ctrl+Shift+Alt+Scroll Lock recenters; Ctrl+Alt+Scroll Lock previews arms in XR or desktop stereo outside XR; Ctrl+Shift+F10 captures";
         } catch(Throwable error) {
             status="Disabled: "+error; error.printStackTrace();
         }

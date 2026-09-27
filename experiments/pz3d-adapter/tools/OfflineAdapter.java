@@ -19,7 +19,7 @@ public final class OfflineAdapter extends pzvr.instrument.RendererTransform {
         try(URLClassLoader resources=new URLClassLoader(new URL[]{game.toUri().toURL(),pz.toUri().toURL(),zb.toUri().toURL()},OfflineAdapter.class.getClassLoader()); JarFile jar=new JarFile(pz.toFile())) {
             OfflineAdapter tool=new OfflineAdapter(resources);
             Map<String,byte[]> transformed=new LinkedHashMap<>();
-            for(String name:List.of(FRAME,P+"StreamFade",P+"TreeRenderer")) {
+            for(String name:List.of(FRAME,P+"StreamFade",P+"TreeRenderer",P+"Renderer")) {
                 byte[] source=jar.getInputStream(jar.getJarEntry(name+".class")).readAllBytes();
                 byte[] result=tool.transform(name,source);
                 var verifier=ClassFile.of(ClassFile.ClassHierarchyResolverOption.of(ClassHierarchyResolver.ofResourceParsing(resources)));
@@ -29,6 +29,7 @@ public final class OfflineAdapter extends pzvr.instrument.RendererTransform {
             }
             tool.require("pair-boundary",1); tool.require("projection",1); tool.require("eye-copy",1); tool.require("fade-clock",1);
             tool.require("scene-adoption",1); tool.require("prediction",1); tool.require("per-eye-visibility",1);
+            tool.require("attachment-upload",1);
             if(tool.evidence.getOrDefault("tree-environment-read",0)==0) throw new IllegalStateException("No tree environment reads found");
             // Write only after all transforms and classfile checks succeed.
             Files.createDirectories(output);

@@ -9,6 +9,8 @@ public final class XrHarness {
     private static OpenXrSession session;
     private static EyeCapture mirror;
     private static final XrCamera camera=new XrCamera();
+    private static final TrackedArms arms=new TrackedArms();
+    private static boolean armPreview;
     private static int width,height;
     private static volatile boolean active;
     private static volatile long lastDraw,lastWatch;
@@ -17,13 +19,19 @@ public final class XrHarness {
     public static void toggle() {
         if(active) { stop("User toggle"); return; }
         try {
-            session=new OpenXrSession(); active=true; lastDraw=System.nanoTime(); camera.recenter();
+            session=new OpenXrSession(); active=true; lastDraw=System.nanoTime(); camera.recenter(); arms.reset(); armPreview=false;
             LiveMirror.suspend(); OpenXrSession.log("ON; Ctrl+Shift+Alt+Scroll Lock recenters, Ctrl+Shift+Scroll Lock stops");
         } catch(Throwable failure) { fail(failure); }
     }
-    public static void recenter() { camera.recenter(); if(active) OpenXrSession.log("Recenter requested"); }
+    public static void recenter() { camera.recenter(); arms.recenter(); if(active) OpenXrSession.log("Recenter requested"); }
+    public static void toggleArmPreview() {
+        if(!active) { OpenXrSession.log("Start OpenXR before toggling synthetic arm preview"); return; }
+        armPreview=!armPreview; arms.recenter();
+        OpenXrSession.log("Synthetic arm preview "+(armPreview?"ON":"OFF; using tracked controllers"));
+    }
     public static void stop(String reason) {
         active=false;
+        arms.reset(); armPreview=false;
         if(mirror!=null) { mirror.close(); mirror=null; }
         if(session!=null) { try { session.close(); } finally { session=null; } }
         OpenXrSession.log("OFF: "+reason);
@@ -42,7 +50,8 @@ public final class XrHarness {
                 if(mirror!=null) mirror.close(); mirror=new EyeCapture(w,h); width=w; height=h;
             }
             boolean rendered=session.frame((head,views,sink)-> {
-                if(session.consumeRecenter()) camera.recenter();
+                if(session.consumeRecenter()) recenter();
+                HandPoses hands=armPreview?TrackedArms.synthetic(head,System.nanoTime()*1e-9):session.hands();
                 mirror.beginPair(); invoked[0]=true;
                 FrameTiming timing=session.timing();
                 PairHooks.render(verified,frame,fresh,camera.eyes(head,views),new PairHooks.Sink() {
@@ -59,7 +68,7 @@ public final class XrHarness {
                         timing.add(FrameTiming.Stage.MIRROR_COPY,System.nanoTime()-now);
                         sink.copy(eye,source,sw,sh);
                     }
-                });
+                },(prepared,base)->arms.apply(prepared,camera.sceneFromLocal(),head,hands));
                 VanillaUi.copy(session);
                 long stamp=System.nanoTime();
                 mirror.mirrorStereo();

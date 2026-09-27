@@ -1,8 +1,8 @@
 # PZ3D VR prototype
 
-Experimental OpenXR support for Project Zomboid through PZ3D and ZombieBuddy. Current prototype: **0.4.0**, Windows x64.
+Experimental OpenXR support for Project Zomboid through PZ3D and ZombieBuddy. Current source prototype: **0.6.0**, Windows x64.
 
-Working features include live stereo rendering, OpenXR head-pose camera mapping, a desktop stereo preview, a simple vanilla UI panel in VR, and frame-timing diagnostics. Live game output and the UI panel have been confirmed with SteamVR's simulated headset. Physical-headset tracking, comfort, and world scale still need validation. Controller input is not implemented; movement and interactions use the existing keyboard/mouse controls.
+Features include live stereo rendering, OpenXR head-pose camera mapping, desktop stereo preview, a vanilla UI panel in VR, frame-timing diagnostics, and controller-driven arm IK. Version 0.6.0 adds palm-centered grips and visible held items that follow the tracked hand. The user reports successful physical controller tracking in the preceding prototype; the new palm/item alignment still needs in-game validation. Controller buttons, locomotion, combat and interactions remain game-controlled. Hardware comfort, latency and world scale still need validation.
 
 ## Requirements
 
@@ -16,13 +16,13 @@ Obtain these separately. This repository contains the prototype source and synth
 
 ## Using the prototype
 
-See the [mod instructions](experiments/zombiebuddy-harness/README.md) for installation, runtime setup, controls, and limitations. Download the mod ZIP from the [v0.4.0 prerelease](https://github.com/kilroy94/pz3d-vr/releases/tag/v0.4.0), or build it using the steps below.
+See the [mod instructions](experiments/zombiebuddy-harness/README.md) for installation, runtime setup, controls, and limitations. Download the [v0.6.0 prerelease](https://github.com/kilroy94/pz3d-vr/releases/tag/v0.6.0), or build it using the steps below.
 
 | Shortcut | Action |
 |---|---|
 | Ctrl+Shift+Scroll Lock | Toggle OpenXR |
 | Ctrl+Shift+Alt+Scroll Lock | Recenter |
-| Ctrl+Shift+F9 | Toggle independent desktop stereo preview |
+| Ctrl+Alt+Scroll Lock (without Shift) | Toggle synthetic arms in XR; desktop stereo when XR is off |
 | Ctrl+Shift+F10 | Capture stereo PNGs while OpenXR is off |
 
 OpenXR automatically includes the vanilla UI as a transparent, head-following panel. The desktop cursor is not included yet. Desktop stereo needs no VR runtime; headset output needs a working OpenXR runtime. A SteamVR simulated-headset helper is included for development without hardware.
@@ -49,7 +49,7 @@ Then build and run the local suite:
 powershell -NoProfile -ExecutionPolicy Bypass -File experiments/zombiebuddy-harness/Test.ps1
 ```
 
-This produces `experiments/zombiebuddy-harness/dist/PZ3DVRTest-0.4.0.zip`. The suite uses synthetic fixtures, copied-class inspection/retransformation without initialization, and standalone OpenGL checks. It does not install the mod or launch the game. Native OpenXR smoke tests are separate; see the harness instructions. Do not run a competing test scene while the game is using XR.
+This produces `experiments/zombiebuddy-harness/dist/PZ3DVRTest-0.6.0.zip`. The suite uses synthetic fixtures, copied-class inspection/retransformation without initialization, and standalone OpenGL checks. It does not install the mod or launch the game. Native OpenXR smoke tests are separate; see the harness instructions. Do not run a competing test scene while the game is using XR.
 
 ## Project layout
 

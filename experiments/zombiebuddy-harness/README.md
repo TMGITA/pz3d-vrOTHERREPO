@@ -6,6 +6,26 @@ Supported binaries are exactly Project Zomboid **42.20.4**, PZ3D **0.2.2**, and 
 
 Version **0.1.1** fixes the original F8 conflict: F8 opens PZ3D's camera panel and its Lua event can be filtered. Capture now polls **Ctrl+Shift+F10** directly on the render thread, once per press, while the game window is focused. Close the game before replacing the local `PZ3DVRTest` folder with this package; restart and approve the changed JAR if ZombieBuddy prompts. Release the chord before another capture.
 
+## Palm alignment and held items (0.6.0)
+
+Active OpenXR controller grip poses now target the center of the character's palm, rather than the hand bone's wrist origin. The palm point is estimated halfway between the wrist and the average non-thumb finger bases, in the model's own hand coordinates. Rigs without suitable finger bases use a small offset along the forearm direction. The offset rotates with the hand, so turning the controller pivots around the palm. Natural arm lengths and reach limits still apply. This is a skeletal estimate; exact palm fit can vary with models and controller profiles.
+
+Held items remain visible and follow their tracked hand. The renderer preserves the captured native grip offset, orientation, mesh transform and scale, then applies the corresponding bone's visual motion. Primary/secondary prop bones follow right/left hands respectively. Named model attachments use their declared bone. Captured nested attachments inherit their parent's motion exactly once. Losing tracking restores that hand and its items to their native animation. Unrelated/untracked attachments remain native.
+
+This is still visual tracking: controller buttons, attacking, hit detection, gun aim/projectiles, flashlight illumination direction and world interactions use the existing game behavior. Two-handed items follow their native owning hand; the other hand is not constrained to a second grip. PZ3D's existing capture/visibility rules still apply, including items it omits while scoped. Fingers retain native animation, and shadows prepared before the stereo pair retain native poses.
+
+Install `PZ3DVRTest-0.6.0.zip` with the game closed and approve the updated JAR if prompted. Start the runtime, enter first-person PZ3D on foot in single player, hold controllers comfortably forward, and enable XR with **Ctrl+Shift+Scroll Lock**. Initial valid tracking aligns controller orientation to the native hand orientation; subsequent rotation turns the wrist. **Ctrl+Shift+Alt+Scroll Lock** recalibrates both camera and hand alignment. Controller position needs no button press.
+
+Test empty hands first: rotate each controller in place and check that the palm stays at the grip position. Then equip a one-handed item, a secondary-hand item, and a two-handed weapon. Check item alignment while translating and rotating each hand, after swapping equipment, after recentering, and after losing/reacquiring one controller. Native shadows and simulated attacks are not evidence of tracked interaction.
+
+Without controllers, start simulated SteamVR and XR as usual, then press **Ctrl+Alt+Scroll Lock without Shift** to animate synthetic hand targets on the actual character and held-item meshes. Press again to return to physical poses. With XR off, the same shortcut toggles desktop stereo. Both former F9 shortcuts were removed in 0.5.1 because vanilla's debug Seam Editor handles F9 even with modifiers. Release Scroll Lock between actions.
+
+One owned arm pose and attachment set is used by both eyes at the head's predicted display time. Original palettes and attachment matrices stay untouched. Arm palette/mask references are restored in the pair's `finally`; a narrowly version-gated fourth renderer hook substitutes owned attachment matrices only at upload. Attachment overrides are cleared on success and failure. Output palette buffers are reused. Controller lookup is included in `LOCATE` timing; retargeting is included in `PREPARE`.
+
+Suggested bindings cover OpenXR simple controllers, Oculus Touch, Valve Index, HTC Vive and Microsoft motion controllers. Each hand falls back independently when tracking is invalid, inactive or not fully tracked; losing application focus disables physical hand poses. Logs in `%USERPROFILE%\Zomboid\console.txt` include `[PZ3D OpenXR] Tracked arms: left=..., right=...`, `Arm IK active: palm-centered grips...`, and the initial attachment override count. Unsupported skeletons or pose failures log `Arm IK disabled; native pose restored` once and disable IK until XR restarts.
+
+The user reports that an acquaintance confirmed physical motion tracking in the preceding prototype. The new palm alignment and held-item rendering still need their in-game test; automated checks do not establish visual fit, hardware latency or comfort.
+
 ## Vanilla UI panel (0.4.0)
 
 When XR is enabled, the vanilla UI is automatically submitted as one transparent, flat, head-following panel in front of the scene. Its center is 1.5 metres ahead, with width at most 2 metres and height at most 1.3 metres, preserving the desktop UI aspect ratio. Layout and keyboard/mouse input remain unchanged. Open inventory and other vanilla windows normally; no extra hotkey or UI configuration is required.
@@ -18,7 +38,7 @@ Install with the game closed and approve the new JAR if prompted. Enable XR with
 
 ## Timing diagnostics (0.3.2)
 
-Replace the local test-mod folder with `PZ3DVRTest-0.4.0.zip` while the game is closed, then approve the new JAR if prompted. Controls are unchanged. Enable XR with **Ctrl+Shift+Scroll Lock**, remain in the same scene for about 20 seconds, then walk/turn for about 30 seconds. Toggle XR off to flush the final partial report. Reports appear automatically in the game's `console.txt` with `[PZ3D XR Timing]`; there is no extra hotkey.
+Replace the local test-mod folder with `PZ3DVRTest-0.6.0.zip` while the game is closed, then approve the new JAR if prompted. Controls are unchanged. Enable XR with **Ctrl+Shift+Scroll Lock**, remain in the same scene for about 20 seconds, then walk/turn for about 30 seconds. Toggle XR off to flush the final partial report. Reports appear automatically in the game's `console.txt` with `[PZ3D XR Timing]`; there is no extra hotkey.
 
 Each five-second window reports successful stereo submissions per elapsed second (`stereoHz`), XR calls, submitted/skipped/failed counts, the runtime's latest predicted display period, and calls whose total wall time exceeds that period (`overBudget`). This is not a compositor dropped-frame count. `stereoHz` measures application submission, not presentation to the display.
 
@@ -47,12 +67,12 @@ Version 0.3.1 moves XR off vanilla time-control/debug-editor keys. Hold Ctrl+Shi
 
 Install this version with the game closed, replacing the existing local test-mod folder. Approve the updated JAR if ZombieBuddy prompts. The package includes pinned LWJGL OpenXR 3.4.1 bindings and the Windows loader; do not install a separate OpenXR SDK or replace the game's LWJGL libraries.
 
-| Shortcut (hold Ctrl+Shift) | Action |
+| Shortcut | Action |
 |---|---|
-| Scroll Lock | Start/stop OpenXR with the current runtime |
-| Alt+Scroll Lock | Recenter the current headset pose onto the game camera |
-| F9 | Toggle the independent synthetic desktop stereo mode |
-| F10 | Save a synthetic stereo pair while OpenXR is off |
+| Ctrl+Shift+Scroll Lock | Start/stop OpenXR with the current runtime |
+| Ctrl+Shift+Alt+Scroll Lock | Recenter the current headset pose onto the game camera |
+| Ctrl+Alt+Scroll Lock (without Shift) | Toggle synthetic arms in XR; desktop stereo when XR is off |
+| Ctrl+Shift+F10 | Save a synthetic stereo pair while OpenXR is off |
 
 Start the runtime before enabling XR. With a physical headset, use its working OpenXR runtime. For the current no-headset test, use the workspace's [simulated SteamVR helper](SimulatedRuntime.ps1):
 
@@ -62,7 +82,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File ".\experiments\zombiebuddy-h
 
 Run that from the project workspace, then launch the game normally yourself, enter first-person PZ3D on foot, and press **Ctrl+Shift+Scroll Lock**. The helper starts only SteamVR, writes its simulation settings/logs under its own `build` directory (the workspace when run from here), and restores its process-local environment afterward. Close any existing SteamVR session before using it. SteamVR is already the registered OpenXR runtime on this machine; the helper does not change the registry. It was tested with a separate client using that default runtime and no configuration-path override. The helper uses the installed Python interpreter and SteamVR API DLL to keep a non-rendering overlay client connected until `-Action Stop`. This prevents the server's 20-second idle exit while the game loads. The isolated profile also keeps the simulated headset awake and disables the SteamVR dashboard and automatic game theater so they cannot cover the scene. These settings apply only to this simulated runtime. Keep `RuntimeKeepalive.py` and `HeadsetWindow.py` next to the PowerShell script. The keeper adds a normal draggable title bar to SteamVR's simulated Headset Window, including windows recreated later. It preserves the rendering-area dimensions. `-WindowX` and `-WindowY` set its initial position; afterward, drag the title bar normally. A `Status` check reports a missing keepalive.
 
-The log should show `[PZ3D OpenXR] Runtime: SteamVR/OpenXR`, `Session created on existing context`, and increasing `Projection pairs submitted` counts. The desktop shows the actual runtime-view pair. The null driver supplies fixed simulated poses; physical head movement is not expected. Ctrl+Shift+Scroll Lock again tears down the session; F9 still controls the independent desktop preview. After testing, run the same helper with `-Action Stop` (or `Status` to inspect it).
+The log should show `[PZ3D OpenXR] Runtime: SteamVR/OpenXR`, `Session created on existing context`, and increasing `Projection pairs submitted` counts. The desktop shows the actual runtime-view pair. The null driver supplies fixed simulated poses; physical head movement is not expected. Ctrl+Shift+Scroll Lock again tears down the session; Ctrl+Alt+Scroll Lock controls the independent desktop preview when XR is off. After testing, run the same helper with `-Action Stop` (or `Status` to inspect it).
 
 The adapter borrows the game's WGL context, locates both eyes and the head at predicted display time, maps them relative to a recentered game-camera anchor, draws one coherent pair and submits a projection layer. Runtime poses/FOV in layer metadata remain unchanged. It reuses GPU mirror targets and performs no PNG readback in XR mode. The prototype renders at the existing game framebuffer resolution, then scales into each runtime-recommended swapchain extent. This is a temporary rendering-resolution policy, not native-resolution VR optimization.
 
@@ -72,7 +92,7 @@ Head movement changes the visual camera only. Existing keyboard/mouse movement, 
 
 ## Continuous desktop stereo preview (0.2.0)
 
-Press **Ctrl+Shift+F9** in first-person PZ3D, on foot, to toggle continuous side-by-side stereo in the **existing game window**. Left eye is on the left; right eye is on the right. Press the same chord again to return to the ordinary view. Both full-aspect images are fitted into the window with black bars, without stretching. Windowed mode is convenient for desktop inspection. No headset or SteamVR is needed.
+Press **Ctrl+Alt+Scroll Lock** in first-person PZ3D, on foot, to toggle continuous side-by-side stereo in the **existing game window**. Left eye is on the left; right eye is on the right. Press the same chord again to return to the ordinary view. Both full-aspect images are fitted into the window with black bars, without stretching. Windowed mode is convenient for desktop inspection. No headset or SteamVR is needed.
 
 This mode renders a new stereo pair on each eligible fresh or retained draw and reuses two GPU targets. It performs no PNG encoding or CPU image readback unless you press **Ctrl+Shift+F10** to save a pair. Resizing recreates the targets. Unsupported camera/vehicle contexts use ordinary rendering and release targets when the draw hook next runs; supported draws resume stereo. The preview starts off after each game launch. A draw failure disables it until restart and attempts ordinary retained rendering.
 
@@ -82,7 +102,7 @@ The log reports `[PZ3D VR Mirror] ON`, the first completed pair, progress every 
 
 ## Install for your test
 
-1. Close Project Zomboid. Extract `PZ3DVRTest-0.4.0.zip` into your local Zomboid mods directory, normally `%USERPROFILE%\Zomboid\mods`. The resulting descriptor should be `mods\PZ3DVRTest\42.20.4\mod.info`, with a sibling `PZ3DVRTest\common` directory. Do not put it in the Steam game directory or replace either existing mod JAR.
+1. Close Project Zomboid. Extract `PZ3DVRTest-0.6.0.zip` into your local Zomboid mods directory, normally `%USERPROFILE%\Zomboid\mods`. The resulting descriptor should be `mods\PZ3DVRTest\42.20.4\mod.info`, with a sibling `PZ3DVRTest\common` directory. Do not put it in the Steam game directory or replace either existing mod JAR.
 2. Enable **ZombieBuddy**, **PZ3D**, and **PZ3D Stereo Capture Test [Java]**, in that order, for a new disposable single-player test save. Keep other mods disabled for this first test. ZombieBuddy and PZ3D remain the existing installations.
 3. The harness JAR is unsigned local development code. If ZombieBuddy presents its Java-mod approval dialog, review and approve this particular `PZ3DVRTest.jar`. The adjacent package `SHA256.txt` identifies the built JAR. No preload permission or global policy change is required. If your loader policy blocks unsigned code outright, the harness will remain unavailable; the package does not bypass that policy.
 4. Launch the save yourself. Enter PZ3D with **Insert**, use first person, and remain on foot. Look at a nearby object with more distant scenery behind it.
@@ -114,9 +134,9 @@ In this source workspace:
 .\experiments\zombiebuddy-harness\Test.ps1
 ```
 
-The builder produces `dist\PZ3DVRTest-0.4.0.zip`, an unpacked `dist\PZ3DVRTest` folder, and `dist\SHA256.txt`. It uses the portable JDK and copied reference JARs already present. It never installs the mod or launches the game. `Test-XR.ps1 -Mode xr -NullRuntime` exercises the packaged XR backend in isolation after `Test.ps1`; `-Mode missing` checks unavailable-runtime fallback. Test fixtures and transformed proprietary reference classes are excluded from the mod JAR.
+The builder produces `dist\PZ3DVRTest-0.6.0.zip`, an unpacked `dist\PZ3DVRTest` folder, and `dist\SHA256.txt`. It uses the portable JDK and copied reference JARs already present. It never installs the mod or launches the game. `Test-XR.ps1 -Mode xr -NullRuntime` exercises the packaged XR backend in isolation after `Test.ps1`; `-Mode missing` checks unavailable-runtime fallback. Test fixtures and transformed proprietary reference classes are excluded from the mod JAR.
 
-The tests exercise real JVM retransformation with an original synthetic renderer, including all-target activation, mismatch rollback, inactive rendering, one-shot requests, unsupported views, recursive entry protection, success/failure reports, lease cleanup, and capture failure isolation. A separate process defines and retransforms the three actual copied PZ3D classes **without initializing them, constructing a Frame, or invoking any game/mod entry point**. A standalone hidden OpenGL context tests the real capture helper: separate eye copies, image orientation, PNG writing, and texture/framebuffer/pixel-buffer state restoration.
+The tests exercise real JVM retransformation with an original synthetic renderer, including all-target activation, mismatch rollback, inactive rendering, one-shot requests, unsupported views, recursive entry protection, success/failure reports, lease cleanup, and capture failure isolation. A separate process defines and retransforms the four actual copied PZ3D classes **without initializing them, constructing a Frame, or invoking any game/mod entry point**. A standalone hidden OpenGL context tests the real capture helper: separate eye copies, image orientation, PNG writing, and texture/framebuffer/pixel-buffer state restoration.
 
 These checks do not replace your in-game test. The original package loaded through ZombieBuddy successfully, but its F8 handler produced no capture request or images. The corrected trigger subsequently produced a live 2560x1440 stereo pair with one preparation and two copies; both images were visually inspected. No physical-headset validation is claimed.
 
@@ -124,7 +144,7 @@ The source workspace has `experiments/zombiebuddy-harness/VALIDATION.md` with th
 
 ## Implementation and boundaries
 
-`Main` obtains the existing ZombieBuddy instrumentation handle using the same loader field used by PZ3D's own `ChunkProbe`. It verifies the three JARs from their actual code-source locations, then installs one schema-preserving transformer for `Renderer$Frame`, `StreamFade`, and `TreeRenderer`. Activation requires all three transformations to succeed. Failed installation removes the transformer and retransforms the targets to roll back its changes.
+`Main` obtains the existing ZombieBuddy instrumentation handle using the same loader field used by PZ3D's own `ChunkProbe`. It verifies the three JARs from their actual code-source locations, then installs one schema-preserving transformer for `Renderer$Frame`, `StreamFade`, `TreeRenderer`, and `Renderer`. Activation requires all four transformations to succeed. Failed installation removes the transformer and retransforms the targets to roll back its changes.
 
 Incoming class bytes are compared with normalized originals, preserving executable instructions while ignoring debug/stack-map attributes and JVM constant-pool/method ordering. Mismatches visible to this transformer disable captures. This cannot detect a different transformer installed later that changes bytes after this transformer has seen them; keep the first test limited to the three listed mods.
 

@@ -40,6 +40,15 @@ public final class XrCameraTest {
         var asymmetric=camera.eyes(pose(0,0,0),List.of(asym,asym)).create(base);
         centre=asymmetric.get(0).viewProjection().transform(new Vector4f(11,20,1.7f,1));
         check(Math.abs(centre.x/centre.w)>.1f && Math.abs(centre.y/centre.w)>.1f,"Runtime asymmetric FOV is preserved");
+        camera.recenter();
+        var anchor=new XrCamera.Pose(2,1.5f,-3,0,q,0,q);
+        camera.eyes(anchor,List.of(view(anchor),view(anchor))).create(base);
+        var sceneHead=camera.sceneFromLocal().transformPosition(new org.joml.Vector3f(anchor.x(),anchor.y(),anchor.z()));
+        check(near(sceneHead.x,base.x())&&near(sceneHead.y,base.y())&&near(sceneHead.z,base.z()),"Hands and head share recentered tracking origin");
+        var handLocal=anchor.matrix().transformPosition(new org.joml.Vector3f(.3f,-.2f,-.4f));
+        var handScene=camera.sceneFromLocal().transformPosition(handLocal);
+        check(near(handScene.x,10.4f)&&near(handScene.y,20.3f)&&near(handScene.z,1.5f),"Recentered hand is right/down/forward of body camera");
+        check(camera.sceneFromLocal().determinant()<0,"Scene reflection explicit for controller rotation conversion");
         System.out.println("XR camera checks passed: "+checks);
     }
 }

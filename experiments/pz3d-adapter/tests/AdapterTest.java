@@ -38,6 +38,29 @@ public final class AdapterTest {
         check(frame.environments.get(0)==frame.environments.get(1),"Weather changes do not split tree environment state");
         check(frame.corpse.rendered,"Final corpse state preserved"); balanced(frame);
 
+        for(boolean fail:new boolean[]{false,true}) {
+            Renderer.reset(); Renderer.Frame posed=new Renderer.Frame();
+            var data=posed.characters.getFirst().parts.getFirst().data;
+            var part=posed.characters.getFirst().parts.getFirst();
+            var attachment=new org.joml.Matrix4f().translation(4,5,6).rotateY(.7f).transpose();
+            var original=data.matrixPalette;
+            var override=java.nio.FloatBuffer.wrap(new float[]{5,6,7,8});
+            int[] scopes={0,0};
+            Work render=()->PairHooks.render(verified,posed,true,PairHooks.synthetic(.064f),(eye,s,w,h)-> {
+                check(data.matrixPalette==override,"Both eyes see the same owned pose");
+                if(fail&&eye==1) throw new IllegalStateException("Injected posed-eye failure");
+            },(f,b)-> {
+                scopes[0]++; data.matrixPalette=override;
+                var items=AttachmentPoses.open(Map.of(part,attachment));
+                return ()->{ items.close(); scopes[1]++; data.matrixPalette=original; };
+            });
+            if(fail) rejected(render); else render.run();
+            check(scopes[0]==1&&scopes[1]==1&&data.matrixPalette==original,"Pose ownership restored once on success/failure");
+            check(part.uploaded.size()==2&&part.uploaded.get(0).equals(attachment)&&part.uploaded.get(1).equals(attachment),"Transformed attachment upload uses same override in both eyes");
+            check(data.xfrm.equals(new org.joml.Matrix4f())&&AttachmentPoses.resolve(data.xfrm,part)==data.xfrm,"Native attachment matrix untouched and scope released on success/failure");
+            balanced(posed);
+        }
+
         Renderer.reset(); Renderer.Frame broken=new Renderer.Frame();
         rejected(()->PairHooks.render(verified,broken,true,PairHooks.synthetic(.064f),(eye,s,w,h)-> { if(eye==1) throw new IllegalStateException("copy failed"); }));
         check(broken.caught!=null,"Original draw swallowed test failure, wrapper detected incomplete pair"); balanced(broken);

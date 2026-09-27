@@ -16,29 +16,29 @@ public final class CaptureHarness {
     private static volatile String status="Not configured";
     private static volatile boolean faulted;
     private static boolean chordHeld;
-    private static boolean mirrorChordHeld;
     private static boolean xrKeyHeld;
     private static void pollCaptureKey() {
         long window=org.lwjglx.opengl.Display.getWindow();
         if(window==0 || glfwGetWindowAttrib(window,GLFW_FOCUSED)!=GLFW_TRUE) {
             chordHeld=true; // Require release before accepting a chord after focus returns.
-            mirrorChordHeld=true;
             xrKeyHeld=true;
             return;
         }
-        boolean modifiers=(glfwGetKey(window,GLFW_KEY_LEFT_CONTROL)==GLFW_PRESS || glfwGetKey(window,GLFW_KEY_RIGHT_CONTROL)==GLFW_PRESS)
-            && (glfwGetKey(window,GLFW_KEY_LEFT_SHIFT)==GLFW_PRESS || glfwGetKey(window,GLFW_KEY_RIGHT_SHIFT)==GLFW_PRESS);
+        boolean ctrl=glfwGetKey(window,GLFW_KEY_LEFT_CONTROL)==GLFW_PRESS || glfwGetKey(window,GLFW_KEY_RIGHT_CONTROL)==GLFW_PRESS;
+        boolean shift=glfwGetKey(window,GLFW_KEY_LEFT_SHIFT)==GLFW_PRESS || glfwGetKey(window,GLFW_KEY_RIGHT_SHIFT)==GLFW_PRESS;
+        boolean alt=glfwGetKey(window,GLFW_KEY_LEFT_ALT)==GLFW_PRESS || glfwGetKey(window,GLFW_KEY_RIGHT_ALT)==GLFW_PRESS;
+        boolean modifiers=ctrl&&shift;
         boolean down=glfwGetKey(window,GLFW_KEY_F10)==GLFW_PRESS && modifiers;
         if(down && !chordHeld) System.out.println("[PZ3D VR Test] "+request());
         chordHeld=down;
-        boolean mirrorDown=glfwGetKey(window,GLFW_KEY_F9)==GLFW_PRESS && modifiers;
-        if(mirrorDown && !mirrorChordHeld) LiveMirror.toggle();
-        mirrorChordHeld=mirrorDown;
         boolean xrDown=glfwGetKey(window,GLFW_KEY_SCROLL_LOCK)==GLFW_PRESS;
-        if(xrDown && !xrKeyHeld && modifiers) {
-            boolean alt=glfwGetKey(window,GLFW_KEY_LEFT_ALT)==GLFW_PRESS || glfwGetKey(window,GLFW_KEY_RIGHT_ALT)==GLFW_PRESS;
-            if(alt) XrHarness.recenter();
-            else { pending.set(false); XrHarness.toggle(); }
+        if(xrDown && !xrKeyHeld && ctrl) {
+            if(shift) {
+                if(alt) XrHarness.recenter();
+                else { pending.set(false); XrHarness.toggle(); }
+            } else if(alt) {
+                if(XrHarness.active()) XrHarness.toggleArmPreview(); else LiveMirror.toggle();
+            }
         }
         // Latch the physical key, so changing modifiers while Scroll Lock is held cannot toggle XR.
         xrKeyHeld=xrDown;

@@ -41,6 +41,7 @@ public final class Renderer {
                 eyeY.add(y); fade.add(StreamFade.clock());
                 environments.add(TreeRenderer.environment());
                 events.add("draw"+eyeY.size());
+                for(Actor actor:characters) for(Part part:actor.parts) a(part,matrix,x,y,z,0);
                 if(mutate) characters.getFirst().parts.getFirst().world.translate(1,0,0);
                 corpse.rendered=true;
                 a(matrix,ShotEffects.snapshot(System.nanoTime()),scene);
@@ -50,15 +51,16 @@ public final class Renderer {
         }
     }
     static void a(Matrix4f m,List<?> traces,Scene scene) { effects++; }
+    static void a(Part part,Matrix4f view,float x,float y,float z,float fade) { part.uploaded.add(new Matrix4f(part.data.xfrm)); }
     public static final class Lease {
         public int refs=1,retains,releases;
         public void retain() { refs++; retains++; }
         public void release() { refs--; releases++; if(refs<1) throw new AssertionError("Premature retirement"); }
     }
     public static final class Corpse { public boolean rendered; }
-    public static final class Actor { public final List<Part> parts=new ArrayList<>(List.of(new Part())); }
-    public static final class Part { public Matrix4f world=new Matrix4f(); public Pose data=new Pose(); }
-    public static final class Pose { public FloatBuffer matrixPalette=FloatBuffer.wrap(new float[]{1,2,3,4}); }
+    public static final class Actor { public boolean body; public final List<Part> parts=new ArrayList<>(List.of(new Part())); }
+    public static final class Part { public Matrix4f world=new Matrix4f(); public Pose data=new Pose(); public final List<Matrix4f> uploaded=new ArrayList<>(); }
+    public static final class Pose { public FloatBuffer matrixPalette=FloatBuffer.wrap(new float[]{1,2,3,4}); public final Matrix4f xfrm=new Matrix4f(); }
     public static void reset() { events.clear(); prepared=shadows=visibility=tail=effects=0; RetainedRender.current=1; GL30.blits=0; }
     public static void invalidate() { RetainedRender.current++; }
     public static void weatherChange() { TreeRenderer.change(); }

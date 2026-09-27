@@ -1,6 +1,6 @@
 # PZ3D renderer boundary — milestone 3
 
-This is an **offline-tested renderer adapter**, not an installable VR mod. It rewrites copies of three classes from the exact installed PZ3D 0.2.2 binary and supplies an opt-in Java bridge for rendering a synthetic eye pair. It does not launch the game, install a transformer, change a signed JAR, or connect game rendering to OpenXR yet.
+This is an **offline-tested renderer adapter**, not an installable VR mod. It rewrites copies of four classes from the exact installed PZ3D 0.2.2 binary and supplies an opt-in Java bridge for rendering a synthetic eye pair. It does not launch the game, install a transformer, change a signed JAR, or connect game rendering to OpenXR yet.
 
 Subsequent milestone: a [ZombieBuddy capture harness](../zombiebuddy-harness/README.md) now packages the bridge and shared transformer for the user's first in-game test. The offline adapter below remains available independently. The harness additionally intercepts capture-only errors and performs retained-style fallback; that behavior was not part of the original adapter-only milestone.
 
@@ -58,3 +58,5 @@ These checks establish bytecode structure and adapter control flow. They do not 
 The missing part is the loader-backed test harness: install an all-or-nothing, version-checked transformer through the supported ZombieBuddy development workflow, invoke the bridge from the existing consumer path, allocate and retire two test targets on the render thread, mirror one eye, and save an opt-in capture with scene/generation and lease evidence. Transformer ordering and original input class hashes must be checked before activation; matching files on disk alone does not prove compatible loaded bytecode.
 
 Do not copy these generated class files into the game or replace the signed PZ3D JAR. Once the harness is packaged, the user can run the first in-game synthetic stereo test. OpenXR submission, headset pose conversion, UI integration, and retained-frame pacing follow that test.
+
+The fourth target, `Renderer`, has a version-checked hook at the part attachment-matrix upload. `AttachmentPoses` supplies owned matrices only within a stereo scope, returning the original matrix when no override exists. This supports held-item motion without writing shared snapshot matrices.

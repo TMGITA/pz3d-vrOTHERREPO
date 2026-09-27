@@ -22,6 +22,15 @@ public class RendererTransform {
         reader.accept(new ClassVisitor(ASM9,writer) {
             @Override public MethodVisitor visitMethod(int access,String method,String desc,String signature,String[] exceptions) {
                 MethodVisitor target=super.visitMethod(access,method,desc,signature,exceptions);
+                if(name.equals(P+"Renderer") && method.equals("a") && desc.equals("(L"+P+"Renderer$Part;Lorg/joml/Matrix4f;FFFF)V")) return new MethodVisitor(ASM9,target) {
+                    @Override public void visitFieldInsn(int op,String owner,String field,String d) {
+                        super.visitFieldInsn(op,owner,field,d);
+                        if(op==GETFIELD && field.equals("xfrm") && d.equals("Lorg/joml/Matrix4f;")) {
+                            hit("attachment-upload"); super.visitVarInsn(ALOAD,0);
+                            super.visitMethodInsn(INVOKESTATIC,"pzvr/AttachmentPoses","resolve","(Lorg/joml/Matrix4f;Ljava/lang/Object;)Lorg/joml/Matrix4f;",false);
+                        }
+                    }
+                };
                 if(name.equals(FRAME) && method.equals("draw") && desc.equals("(Z)V")) return draw(target);
                 if(name.equals(P+"TreeRenderer")) return new MethodVisitor(ASM9,target) {
                     @Override public void visitFieldInsn(int op,String owner,String field,String d) {

@@ -140,3 +140,50 @@ Composition contract: https://registry.khronos.org/OpenXR/specs/1.1/man/html/XrC
 ## User confirmation of 0.4.0 UI
 
 The user confirmed that the vanilla UI panel works in-game with the simulated Headset Window. Physical-headset validation remains pending.
+
+## Version 0.5.0 tracked arm prototype
+
+Adds OpenXR left/right grip pose actions and action spaces, sampled in LOCAL space at the head/eye predicted display time while the session is focused. Missing/inactive/untracked controllers retain native animation per hand. Suggested bindings cover simple, Touch, Index, Vive and Microsoft motion profiles. Action setup/sync failure leaves the world renderer available and logs the controller failure.
+
+The stereo preparation hook applies one owned palette per local body/clothing part after common preparation and before both eyes. It decodes vanilla offset/model storage, solves two-bone arm IK, applies wrist orientation deltas with initial native-pose alignment, propagates finger descendants, and restores original palette/mask references in the outer pair `finally`. Original buffer contents and animation players are untouched. Upper-arm masks are widened only on tracked sides; static held props are hidden during overrides. Other characters are untouched. Unchanged bones retain exact source floats. Model reach limits apply. A skeleton/pose failure rolls back all earlier substitutions and disables IK until the next XR session. Native shadows are prepared before the override and remain a known visual limitation.
+
+Workspace validation on 2026-09-27:
+
+- 298 arm checks: real legacy matrix mul/store round trips with nonidentity offsets; reachable/clamped/singular targets; bone lengths; wrist rotation; finger-relative transforms; untouched opposite arm/spine; mask selection; world/LOCAL/model conversion; separate clothing buffers; reuse; exact original bytes; reference restoration; tracking loss and partial-override rollback. Heap palette buffers are rejected before entering the old JOML Unsafe buffer path.
+- 59 adapter checks, including one override for both eyes and exactly one restoration after normal completion or injected second-eye failure.
+- Full harness suite: 23 capture, 18 mirror, 27 XR lifecycle, 42 camera, 25 real OpenGL capture, and 13 timing checks. All three copied PZ3D classes retransform without initialization; actual arm/mask/skinning metadata field layouts are checked. Evidence: `build/runs/20260927-164525-417/` and `../pz3d-adapter/build/test-results.txt`.
+- Native packaged backend: 1,251 checks against simulated SteamVR, including successful real action-set/space creation, attachment and synchronization across two session lifetimes, with no controllers present. Submitted 120 projection pairs and 100 UI panels; existing resize, partial-pair/post-UI failure and GL-state cleanup tests pass. Evidence: `build/xr-runs/20260927-164657-178-xr/`.
+
+The first isolated arm test used a heap test buffer with the game's older JOML, triggering its Unsafe native access failure. The fixture now uses direct buffers like the game; production retargeting also rejects heap/nonwritable output buffers. Subsequent tests pass. This occurred in a standalone test process, not the game.
+
+Ctrl+Shift+Alt+F9 enables synthetic waving while XR runs, allowing the user to test actual character/clothing deformation without controllers. In-game arm rendering, controller motion, wrist/palm alignment and clothing fit have **not** been validated by these standalone checks. No game/mod entry point was launched, no installed files were modified, and no 0.5.0 GitHub release was published. The simulated runtime remains available for the user's test.
+
+
+## Version 0.5.1 preview hotkey correction
+
+Removed both F9 preview bindings: vanilla debug mode handles KEY_F9 (67) in IngameState to enter SeamEditorState without excluding modifiers. Ctrl+Alt+Scroll Lock (without Shift) now toggles synthetic arm preview while XR is active or desktop stereo otherwise. Existing Ctrl+Shift+Scroll Lock XR toggle and Ctrl+Shift+Alt+Scroll Lock recenter remain unchanged. The physical Scroll Lock edge is shared across actions; modifier changes while held cannot trigger a second action.
+
+No Scroll Lock input handler was found in the inspected vanilla Lua, PZ3D input source, or vanilla IngameState/GameWindow/UIManager/GameKeyboard bytecode. The local user key bindings do not assign Scroll Lock. This does not cover arbitrary additional mods or custom future bindings.
+
+Full Test.ps1 suite passed: 23 capture, 19 mirror, 28 XR lifecycle, 42 camera, 25 OpenGL, 13 timing, and 298 arm checks, plus copied binary retransformation/layout checks. New regressions ensure both old F9 chords are inactive and the new context-sensitive chord preserves XR. Evidence: build/runs/20260927-165350-665/. No game was launched or installed files changed.
+
+
+## User report: physical arm tracking
+
+The user reports that an acquaintance confirmed controller motion tracking in the preceding prototype. Reported issues were the controller grip aligning at the wrist rather than inside the hand, and hidden held items. The report does not specify the headset/controller model or establish measured latency or comfort.
+
+## Version 0.6.0 palm alignment and held attachments
+
+Grip targets now position an estimated palm center, with wrist position derived from the calibrated hand orientation and a cached hand-local offset. The offset is halfway from wrist to the average directly parented, non-thumb finger bases. If unavailable or implausible, the fallback is 15% of forearm length along the native forearm direction. Rotation therefore pivots around the palm; reach clamping and independent tracking fallback remain. This anatomical estimate still needs visual fitting on physical controllers.
+
+Held attachments are no longer hidden. The retargeter exposes per-bone pose deltas, including right/left primary/secondary Prop1/Prop2 aliases. Named parent attachment metadata selects the corresponding bone. A scene-space bone delta updates the captured static item transform through each part's prepared world transform, preserving existing item offsets, mesh transforms and scale. Captured nested static attachments inherit the same delta exactly once. Untracked/unrelated items remain native. No live animation player, original palette contents, native attachment matrix, or item world matrix is modified.
+
+A fourth version-gated transform targets Renderer.a(Part, Matrix4f, float, float, float, float), substituting the attachment matrix only at its existing upload read. AttachmentPoses owns copied matrices in a render-thread scope. Both eyes use the same overrides, and finally removes the scope on success/failure. The actual binary has exactly one matching upload read; all four transformed classes verify and retransform without initialization or executing game/mod entry points.
+
+Validation:
+
+- Full harness suite: 23 capture, 19 mirror, 28 XR lifecycle, 42 camera, 25 OpenGL and 13 timing checks passed, plus actual four-class retransformation and attachment field/accessor checks. Evidence: build/runs/20260927-175159-352/.
+- Final targeted arm/attachment suite: 388 checks passed, including palm pivot/rotation, fingerless fallback, right/left items, named attachment precedence, retained native grip/scale, distinct part world transforms, nested items before parents in draw order, tracking loss per hand, untouched native matrices, and rollback for invalid attachment graphs. Evidence: build/runs/20260927-175159-352/arm-tracking-final.log.
+- Adapter suite: 63 checks passed, including the actual transformed upload path in original fixtures, identical attachment matrices for both eyes, and normal/second-eye-failure cleanup. Evidence: ../pz3d-adapter/build/test-results.txt.
+
+The OpenXR backend/action code is unchanged from the previously tested build; no additional native runtime run was needed. The user must test the new palm fit and held-item appearance in-game. Two-handed weapons still follow their native owning hand; no support-hand constraint, motion combat, changed projectiles, flashlight direction, or other world interaction is implemented. PZ3D's existing attachment capture and scoped visibility rules remain. Shadows retain the native pose. No game was launched, no installed files changed, and no 0.6.0 release was published.

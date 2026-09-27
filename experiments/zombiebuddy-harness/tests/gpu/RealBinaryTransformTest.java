@@ -19,6 +19,22 @@ public final class RealBinaryTransformTest {
             if(field.getType()!=int.class || !java.lang.reflect.Modifier.isStatic(field.getModifiers())) throw new AssertionError("UI snapshot layout mismatch: "+name);
         }
         System.out.println("Actual UiLayer snapshot fields verified without initialization.");
-        System.out.println("Actual copied binary retransformation passed: 3 classes; no initialization, rendering, or mod/game entry points.");
+        var loader=RealBinaryTransformTest.class.getClassLoader();
+        Class<?> actor=Class.forName("com.pavelvoronin.pz3d.Renderer$CharacterDraw",false,loader);
+        if(actor.getDeclaredField("body").getType()!=boolean.class) throw new AssertionError("Local body selector");
+        Class<?> part=Class.forName("com.pavelvoronin.pz3d.Renderer$Part",false,loader);
+        for(String name:List.of("arms","limbs")) if(part.getDeclaredField(name).getType()!=float[].class) throw new AssertionError("Arm mask "+name);
+        if(part.getDeclaredField("world").getType()!=org.joml.Matrix4f.class) throw new AssertionError("Part world transform");
+        Class<?> pose=part.getDeclaredField("data").getType();
+        if(pose.getField("matrixPalette").getType()!=java.nio.FloatBuffer.class) throw new AssertionError("Borrowed pose palette");
+        Class<?> skin=Class.forName("zombie.core.skinnedmodel.model.SkinningData",false,loader);
+        for(String name:List.of("boneIndices","skeletonHierarchy","boneOffset")) skin.getField(name);
+        System.out.println("Actual arm snapshot/mask/skinning metadata fields verified without initialization.");
+        if(pose.getField("xfrm").getType()!=org.joml.Matrix4f.class||!pose.getField("parent").getType().isAssignableFrom(pose)) throw new AssertionError("Attachment snapshot shape");
+        Class<?> instance=pose.getField("modelInstance").getType();
+        for(String field:List.of("parentBoneName","attachmentNameParent")) if(instance.getField(field).getType()!=String.class) throw new AssertionError("Attachment identifier "+field);
+        Class<?> attachment=instance.getMethod("getAttachmentById",String.class).getReturnType();
+        if(attachment.getMethod("getBone").getReturnType()!=String.class) throw new AssertionError("Attachment bone accessor");
+        System.out.println("Actual copied binary retransformation passed: 4 classes, including attachment upload; no initialization, rendering, or mod/game entry points.");
     }
 }

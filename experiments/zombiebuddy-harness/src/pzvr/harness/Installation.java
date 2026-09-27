@@ -14,7 +14,7 @@ import pzvr.instrument.RendererTransform;
 
 /** Schema-preserving, all-target activation. An incompatible later transform disables requests. */
 public final class Installation implements ClassFileTransformer {
-    public static final List<String> TARGETS=List.of(RendererTransform.FRAME,RendererTransform.P+"StreamFade",RendererTransform.P+"TreeRenderer");
+    public static final List<String> TARGETS=List.of(RendererTransform.FRAME,RendererTransform.P+"StreamFade",RendererTransform.P+"TreeRenderer",RendererTransform.P+"Renderer");
     private final ClassLoader loader;
     private final Map<String,byte[]> expected;
     private final Set<String> accepted=new HashSet<>();
@@ -53,6 +53,7 @@ public final class Installation implements ClassFileTransformer {
             if(!Arrays.equals(expected.get(name),canonical(bytes))) throw new IllegalStateException("Loaded bytecode differs from supported original: "+name);
             RendererTransform transform=new RendererTransform(loader,true);
             byte[] result=transform.transform(name,bytes);
+            if(name.equals(RendererTransform.P+"Renderer")) transform.require("attachment-upload",1);
             if(name.equals(RendererTransform.FRAME)) {
                 transform.require("pair-boundary",1); transform.require("eye-copy",1); transform.require("projection",1);
                 transform.require("harness-entry",1); transform.require("capture-failure-isolation",1);

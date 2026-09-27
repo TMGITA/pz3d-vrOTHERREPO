@@ -21,7 +21,10 @@ public final class OpenXrSession implements AutoCloseable {
     private long system,format,context,dc;
     private final Thread owner=Thread.currentThread();
     private final Eye[] eyes=new Eye[2];
-    private boolean running,ended,closed;
+    private boolean running,ended,closed,focused;
+    private XrHands hands;
+    private HandPoses handPoses=HandPoses.NONE;
+    public HandPoses hands() { return handPoses; }
     private long recenterTime=Long.MAX_VALUE;
     private boolean recenter;
     private int fbo,uiReadFbo;
@@ -76,6 +79,8 @@ public final class OpenXrSession implements AutoCloseable {
             check(xrCreateSession(instance,XrSessionCreateInfo.calloc(s).type$Default().systemId(system).next(binding.address()),pointer),"create session");
             session=new XrSession(pointer.get(0),instance);
             local=space(XR_REFERENCE_SPACE_TYPE_LOCAL,s); head=space(XR_REFERENCE_SPACE_TYPE_VIEW,s);
+            try { hands=new XrHands(instance,session); }
+            catch(RuntimeException failure) { log("Controller poses unavailable; native arms retained: "+failure); }
             createSwapchains(s); fbo=glGenFramebuffers();
             log("Session created on existing context; waiting for READY");
         }
@@ -181,6 +186,7 @@ public final class OpenXrSession implements AutoCloseable {
             if(event.type()!=XR_TYPE_EVENT_DATA_SESSION_STATE_CHANGED) continue;
             XrEventDataSessionStateChanged changed=XrEventDataSessionStateChanged.create(event.address());
             if(changed.session()!=session.address()) continue;
+            focused=changed.state()==XR_SESSION_STATE_FOCUSED;
             log("Session state="+changed.state());
             switch(changed.state()) {
                 case XR_SESSION_STATE_READY -> {
@@ -196,7 +202,7 @@ public final class OpenXrSession implements AutoCloseable {
         current(); if(closed) throw new IllegalStateException("Session closed");
         timing.begin(System.nanoTime());
         boolean success=false,rendered=false;
-        uiCopied=false;
+        uiCopied=false; handPoses=HandPoses.NONE;
         try(MemoryStack s=stackPush()) {
             events(s); if(ended) throw new IllegalStateException("Runtime session stopped or lost");
             if(!running) { success=true; return false; }
@@ -218,6 +224,10 @@ public final class OpenXrSession implements AutoCloseable {
                         .displayTime(state.predictedDisplayTime()).space(local),validity,count,views),"locate views");
                     XrSpaceLocation location=XrSpaceLocation.calloc(s).type$Default();
                     check(xrLocateSpace(head,local,state.predictedDisplayTime(),location),"locate head");
+                    if(hands!=null) {
+                        try { handPoses=hands.locate(local,state.predictedDisplayTime(),focused,s); }
+                        catch(RuntimeException failure) { log("Controller poses disabled for this session: "+failure); hands.close(); hands=null; }
+                    }
                     timing.add(FrameTiming.Stage.LOCATE,System.nanoTime()-stamp);
                     long required=XR_VIEW_STATE_ORIENTATION_VALID_BIT|XR_VIEW_STATE_POSITION_VALID_BIT;
                     long headRequired=XR_SPACE_LOCATION_ORIENTATION_VALID_BIT|XR_SPACE_LOCATION_POSITION_VALID_BIT;
@@ -300,6 +310,8 @@ public final class OpenXrSession implements AutoCloseable {
         for(Eye eye:eyes) destroy(eye);
         destroy(ui); ui=null;
         if(uiReadFbo!=0) { glDeleteFramebuffers(uiReadFbo); uiReadFbo=0; }
+        if(hands!=null) { hands.close(); hands=null; }
+        handPoses=HandPoses.NONE;
         if(head!=null) cleanup(xrDestroySpace(head),"destroy head space");
         if(local!=null) cleanup(xrDestroySpace(local),"destroy local space");
         if(session!=null) cleanup(xrDestroySession(session),"destroy session");

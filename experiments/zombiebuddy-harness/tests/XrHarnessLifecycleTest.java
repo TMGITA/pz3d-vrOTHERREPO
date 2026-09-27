@@ -41,6 +41,15 @@ public final class XrHarnessLifecycleTest {
         OpenXrSession.render=false; Renderer.reset(); frame=draw();
         check(frame.freshCalls.equals(List.of(true)) && Renderer.visibility==1,"Waiting/shouldRender false uses ordinary draw without duplicate preparation");
         OpenXrSession.render=true;
+        var preview=XrHarness.class.getDeclaredField("armPreview"); preview.setAccessible(true);
+        keys.clear(); draw(); keys.addAll(List.of(GLFW_KEY_LEFT_CONTROL,GLFW_KEY_LEFT_SHIFT,GLFW_KEY_LEFT_ALT,GLFW_KEY_F9)); draw();
+        check(!preview.getBoolean(null)&&XrHarness.active(),"Old F9 chord no longer triggers arm preview");
+        keys.clear(); draw(); keys.addAll(List.of(GLFW_KEY_LEFT_CONTROL,GLFW_KEY_LEFT_ALT,GLFW_KEY_SCROLL_LOCK)); draw();
+        check(preview.getBoolean(null)&&XrHarness.active()&&!LiveMirror.enabled(),"Synthetic arms chord preserves XR and does not toggle desktop mode");
+        draw(); keys.add(GLFW_KEY_LEFT_SHIFT); draw(); keys.remove(GLFW_KEY_LEFT_ALT); draw();
+        check(preview.getBoolean(null)&&XrHarness.active(),"Held Scroll Lock/modifier changes do not toggle arms or XR");
+        keys.clear(); draw(); keys.addAll(List.of(GLFW_KEY_RIGHT_CONTROL,GLFW_KEY_RIGHT_ALT,GLFW_KEY_SCROLL_LOCK)); draw();
+        check(!preview.getBoolean(null)&&XrHarness.active(),"Second press returns to physical controller poses");
         for(int alt:new int[]{GLFW_KEY_LEFT_ALT,GLFW_KEY_RIGHT_ALT}) {
             keys.clear(); draw(); keys.add(GLFW_KEY_LEFT_CONTROL); keys.add(GLFW_KEY_LEFT_SHIFT); keys.add(alt); keys.add(GLFW_KEY_SCROLL_LOCK); draw();
             check(XrHarness.active(),"Recenter does not end session");
