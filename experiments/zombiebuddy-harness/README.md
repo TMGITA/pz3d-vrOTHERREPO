@@ -6,6 +6,46 @@ Supported binaries are exactly Project Zomboid **42.20.4**, PZ3D **0.2.2**, and 
 
 Version **0.1.1** fixes the original F8 conflict: F8 opens PZ3D's camera panel and its Lua event can be filtered. Capture now polls **Ctrl+Shift+F10** directly on the render thread, once per press, while the game window is focused. Close the game before replacing the local `PZ3DVRTest` folder with this package; restart and approve the changed JAR if ZombieBuddy prompts. Release the chord before another capture.
 
+## Controller reach fitting (0.6.5)
+
+Tracked arms can now extend beyond the avatar's native reach to meet controller targets. Extension happens only when needed, maintaining the native upper-arm/forearm proportions. The arm mesh stretches along the segments rather than merely moving the wrist; hand size, palm offsets, and held-item scale remain unchanged. Nearby targets use native segment lengths again.
+
+**Options > Mods > PZ3D VR > Maximum arm reach (%)** sets the limit: default **150%**, adjustable from 100% to 175%. Press Apply to save. 100% restores the native reach cap. This is bounded automatic extension with a manual fitting limit, not a measurement of your anatomical arm length. Hands still clamp beyond the configured maximum; increase it only if your normal full extension remains short. Larger values can visibly stretch sleeves/elbows. It changes visual reach only, not melee range or gameplay hit detection.
+
+After updating, recenter upright using the countdown. Extend and retract each arm, rotate the wrists, then repeat while kneeling and holding an item. Verify palms stay at controller grips, items retain their size, and arms retract without drift. Real headset fit remains to be confirmed.
+
+## Physical kneeling: arm-root height (0.6.4)
+
+Tracked arm roots now move with physical headset height changes relative to the last recenter. Kneeling lowers the shoulders used by the arm solver; standing back up restores them. The adjustment uses the same tracking-space conversion as the hands and is added to the current native arm pose. Native camera/crouch motion is not counted a second time. Tracking interruptions preserve the height reference; explicit recenter establishes a new reference, so calibrate in your intended neutral posture.
+
+This is a first-person visual arm-root correction. Torso, pelvis, legs, collision, and gameplay crouch state remain native; this is not full-body IK. Shoulder/torso mesh transitions may still look stretched and need headset inspection. Arm lengths and maximum reach are unchanged; player/avatar reach calibration is separate. Untracked hands keep their existing native-pose fallback.
+
+Test by recentering upright, kneeling with both controllers held in front, then standing again. Repeat while holding an item and after a SteamVR dashboard interruption. Check clothing, shoulder seams, palm alignment, and that native crouching does not double the correction. Physical-headset confirmation remains pending.
+
+## Hands-free recenter countdown (0.6.3)
+
+Press **Recenter headset** once, release the keyboard, then face forward and hold both controllers neutrally. A **five-second countdown** appears in the vanilla UI (also presented in VR), followed by a completion message. Another press restarts the countdown. Stopping XR or switching synthetic-preview mode cancels it. After the countdown, calibration waits for VR focus and any hands that were tracked when you requested it. Headset-only/simulated use still supports recentering without controllers.
+
+The calibration uses your pose when the countdown finishes, not the pose when you press the shortcut. The same remappable shortcut now schedules this delay rather than calibrating immediately. Physical-headset verification of the countdown overlay remains pending.
+
+## Hand tracking resume fix (0.6.2)
+
+Temporary tracking loss and SteamVR dashboard/focus interruptions now preserve the existing controller-to-hand rotation calibration and palm offset. Missing hands still use native animation until valid tracking returns. Runtime reference-space changes reanchor the camera without recalibrating the hands from an arbitrary controller pose.
+
+Initial calibration still occurs on the first valid tracked pose. To correct an existing bad alignment, hold the controllers comfortably forward in a neutral pose and use **Recenter headset** (default Ctrl+Shift+Alt+Scroll Lock). Starting a new XR session and changing synthetic-preview mode also reset arm calibration. This update does not replace that initial calibration with a fixed anatomical controller mapping.
+
+Retest with both hands: open the SteamVR dashboard, move/rotate the controllers while it is open, close it, and return to neutral. Repeat with one controller briefly losing tracking and with a held item. Orientation should return consistently without needing another recenter. This sequence has numerical regression coverage; physical-headset confirmation remains pending.
+
+## Remappable shortcuts (0.6.1)
+
+Open **Options > Mods > PZ3D VR**. Each action has a keyboard key picker and a modifier selector (None, Ctrl, Shift, Alt, or combinations). Press the key alone in the picker; choose modifiers in the separate selector. Press **Apply** to activate and save changes. Use **Clear** in the key picker to disable an action. Defaults retain the shortcuts documented below; all shortcut examples in these instructions assume defaults.
+
+The four bindings are Toggle OpenXR, Recenter headset, Toggle synthetic arms / desktop stereo, and Save stereo PNG pair. The preview shortcut retains its context-dependent behavior: synthetic arms while XR is active, desktop stereo otherwise. Bindings persist through the game's built-in `ModOptions.ini`; no additional options mod is required.
+
+Shortcuts are suppressed while Options is visible or a text field is active. Release the action key after changing settings or restoring window focus. Modifiers must match exactly; adding/removing modifiers while holding the key does not trigger another action. Identical PZ3D VR chords are disabled until made distinct. Native game and other mod controls are not consumed; select keys that do not conflict with your other controls. Mouse buttons and modifier-only bindings are not supported.
+
+Close the game before replacing the local mod folder with this package, then restart and approve the changed JAR if ZombieBuddy prompts. To verify: remap an action, Apply, check its old shortcut no longer works, try the new shortcut, then restart the game and check it persists. The settings UI still needs this user-run in-game check.
+
 ## Palm alignment and held items (0.6.0)
 
 Active OpenXR controller grip poses now target the center of the character's palm, rather than the hand bone's wrist origin. The palm point is estimated halfway between the wrist and the average non-thumb finger bases, in the model's own hand coordinates. Rigs without suitable finger bases use a small offset along the forearm direction. The offset rotates with the hand, so turning the controller pivots around the palm. Natural arm lengths and reach limits still apply. This is a skeletal estimate; exact palm fit can vary with models and controller profiles.
@@ -14,7 +54,7 @@ Held items remain visible and follow their tracked hand. The renderer preserves 
 
 This is still visual tracking: controller buttons, attacking, hit detection, gun aim/projectiles, flashlight illumination direction and world interactions use the existing game behavior. Two-handed items follow their native owning hand; the other hand is not constrained to a second grip. PZ3D's existing capture/visibility rules still apply, including items it omits while scoped. Fingers retain native animation, and shadows prepared before the stereo pair retain native poses.
 
-Install `PZ3DVRTest-0.6.0.zip` with the game closed and approve the updated JAR if prompted. Start the runtime, enter first-person PZ3D on foot in single player, hold controllers comfortably forward, and enable XR with **Ctrl+Shift+Scroll Lock**. Initial valid tracking aligns controller orientation to the native hand orientation; subsequent rotation turns the wrist. **Ctrl+Shift+Alt+Scroll Lock** recalibrates both camera and hand alignment. Controller position needs no button press.
+Install `PZ3DVRTest-0.6.5.zip` with the game closed and approve the updated JAR if prompted. Start the runtime, enter first-person PZ3D on foot in single player, hold controllers comfortably forward, and enable XR with **Ctrl+Shift+Scroll Lock**. Initial valid tracking aligns controller orientation to the native hand orientation; subsequent rotation turns the wrist. **Ctrl+Shift+Alt+Scroll Lock** recalibrates both camera and hand alignment. Controller position needs no button press.
 
 Test empty hands first: rotate each controller in place and check that the palm stays at the grip position. Then equip a one-handed item, a secondary-hand item, and a two-handed weapon. Check item alignment while translating and rotating each hand, after swapping equipment, after recentering, and after losing/reacquiring one controller. Native shadows and simulated attacks are not evidence of tracked interaction.
 
@@ -38,7 +78,7 @@ Install with the game closed and approve the new JAR if prompted. Enable XR with
 
 ## Timing diagnostics (0.3.2)
 
-Replace the local test-mod folder with `PZ3DVRTest-0.6.0.zip` while the game is closed, then approve the new JAR if prompted. Controls are unchanged. Enable XR with **Ctrl+Shift+Scroll Lock**, remain in the same scene for about 20 seconds, then walk/turn for about 30 seconds. Toggle XR off to flush the final partial report. Reports appear automatically in the game's `console.txt` with `[PZ3D XR Timing]`; there is no extra hotkey.
+Replace the local test-mod folder with `PZ3DVRTest-0.6.5.zip` while the game is closed, then approve the new JAR if prompted. Controls are unchanged. Enable XR with **Ctrl+Shift+Scroll Lock**, remain in the same scene for about 20 seconds, then walk/turn for about 30 seconds. Toggle XR off to flush the final partial report. Reports appear automatically in the game's `console.txt` with `[PZ3D XR Timing]`; there is no extra hotkey.
 
 Each five-second window reports successful stereo submissions per elapsed second (`stereoHz`), XR calls, submitted/skipped/failed counts, the runtime's latest predicted display period, and calls whose total wall time exceeds that period (`overBudget`). This is not a compositor dropped-frame count. `stereoHz` measures application submission, not presentation to the display.
 
@@ -102,7 +142,7 @@ The log reports `[PZ3D VR Mirror] ON`, the first completed pair, progress every 
 
 ## Install for your test
 
-1. Close Project Zomboid. Extract `PZ3DVRTest-0.6.0.zip` into your local Zomboid mods directory, normally `%USERPROFILE%\Zomboid\mods`. The resulting descriptor should be `mods\PZ3DVRTest\42.20.4\mod.info`, with a sibling `PZ3DVRTest\common` directory. Do not put it in the Steam game directory or replace either existing mod JAR.
+1. Close Project Zomboid. Extract `PZ3DVRTest-0.6.5.zip` into your local Zomboid mods directory, normally `%USERPROFILE%\Zomboid\mods`. The resulting descriptor should be `mods\PZ3DVRTest\42.20.4\mod.info`, with a sibling `PZ3DVRTest\common` directory. Do not put it in the Steam game directory or replace either existing mod JAR.
 2. Enable **ZombieBuddy**, **PZ3D**, and **PZ3D Stereo Capture Test [Java]**, in that order, for a new disposable single-player test save. Keep other mods disabled for this first test. ZombieBuddy and PZ3D remain the existing installations.
 3. The harness JAR is unsigned local development code. If ZombieBuddy presents its Java-mod approval dialog, review and approve this particular `PZ3DVRTest.jar`. The adjacent package `SHA256.txt` identifies the built JAR. No preload permission or global policy change is required. If your loader policy blocks unsigned code outright, the harness will remain unavailable; the package does not bypass that policy.
 4. Launch the save yourself. Enter PZ3D with **Insert**, use first person, and remain on foot. Look at a nearby object with more distant scenery behind it.
@@ -134,7 +174,7 @@ In this source workspace:
 .\experiments\zombiebuddy-harness\Test.ps1
 ```
 
-The builder produces `dist\PZ3DVRTest-0.6.0.zip`, an unpacked `dist\PZ3DVRTest` folder, and `dist\SHA256.txt`. It uses the portable JDK and copied reference JARs already present. It never installs the mod or launches the game. `Test-XR.ps1 -Mode xr -NullRuntime` exercises the packaged XR backend in isolation after `Test.ps1`; `-Mode missing` checks unavailable-runtime fallback. Test fixtures and transformed proprietary reference classes are excluded from the mod JAR.
+The builder produces `dist\PZ3DVRTest-0.6.5.zip`, an unpacked `dist\PZ3DVRTest` folder, and `dist\SHA256.txt`. It uses the portable JDK and copied reference JARs already present. It never installs the mod or launches the game. `Test-XR.ps1 -Mode xr -NullRuntime` exercises the packaged XR backend in isolation after `Test.ps1`; `-Mode missing` checks unavailable-runtime fallback. Test fixtures and transformed proprietary reference classes are excluded from the mod JAR.
 
 The tests exercise real JVM retransformation with an original synthetic renderer, including all-target activation, mismatch rollback, inactive rendering, one-shot requests, unsupported views, recursive entry protection, success/failure reports, lease cleanup, and capture failure isolation. A separate process defines and retransforms the four actual copied PZ3D classes **without initializing them, constructing a Frame, or invoking any game/mod entry point**. A standalone hidden OpenGL context tests the real capture helper: separate eye copies, image orientation, PNG writing, and texture/framebuffer/pixel-buffer state restoration.
 

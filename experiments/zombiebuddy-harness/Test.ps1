@@ -41,6 +41,10 @@ if($LASTEXITCODE -ne 0) { throw 'GPU capture checks failed.' }
 if($LASTEXITCODE -ne 0) { throw 'XR camera tests failed.' }
 & $java -cp "$gpu;$classes" FrameTimingTest | Tee-Object "$run\xr-timing.log"
 if($LASTEXITCODE -ne 0) { throw 'XR timing statistics failed.' }
+& $java -cp "$gpu;$classes;$game" HotkeysTest | Tee-Object "$run\hotkeys.log"
+if($LASTEXITCODE -ne 0) { throw 'Configurable hotkey checks failed.' }
+& $java -cp "$gpu;$classes" RecenterCountdownTest | Tee-Object "$run\recenter-countdown.log"
+if($LASTEXITCODE -ne 0) { throw 'Recenter countdown checks failed.' }
 & $java -cp "$gpu;$classes;$adapter;$libs;$game" ArmTrackingTest | Tee-Object "$run\arm-tracking.log"
 if($LASTEXITCODE -ne 0) { throw 'Arm tracking checks failed.' }
 Write-Host "Harness evidence: $run"

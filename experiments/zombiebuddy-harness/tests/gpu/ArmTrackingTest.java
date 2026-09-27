@@ -103,6 +103,24 @@ public final class ArmTrackingTest {
         expected.setTranslation(new Vector3f(pos(target)).sub(expected.transformDirection(rig.palmLocal(0))));
         near(decode(out,3),expected,"Grip rotates hand around palm after calibration");
         near(decode(out,3).transformPosition(rig.palmLocal(0)),pos(target),"Palm remains at grip while wrist rotates");
+        // Resume in a different controller orientation, while the native animation also changed.
+        ArmRig uninterrupted=rig(); FloatBuffer reference=buffer();
+        Matrix4f neutral=new Matrix4f().translation(pos(target));
+        uninterrupted.pose(source,new Matrix4f[]{neutral,null},poles,reference);
+        Matrix4f savedHand=new Matrix4f(model[3]);
+        model[3].rotateX(-.9f);
+        FloatBuffer animated=original(); model[3].set(savedHand);
+        for(int i=0;i<3;i++) rig.pose(animated,new Matrix4f[2],poles,out);
+        near(decode(out,3),decode(animated,3),"Missing tracking still uses current native animation");
+        Matrix4f resumed=new Matrix4f(target).rotateX(1.1f);
+        rig.pose(animated,new Matrix4f[]{resumed,null},poles,out);
+        uninterrupted.pose(animated,new Matrix4f[]{resumed,null},poles,reference);
+        near(decode(out,3),decode(reference,3),"Resume preserves calibration despite controller and native-pose changes");
+        rig.pose(source,new Matrix4f[]{neutral,null},poles,out);
+        uninterrupted.pose(source,new Matrix4f[]{neutral,null},poles,reference);
+        near(decode(out,3),decode(reference,3),"Returning controller to neutral restores original orientation");
+        rig.recenter(); rig.pose(source,new Matrix4f[]{resumed,null},poles,out);
+        near(decode(out,3).setTranslation(0,0,0),new Matrix4f(model[3]).setTranslation(0,0,0),"Explicit recenter still recalibrates orientation");
         String[] noFingers=names.clone(); noFingers[4]="OtherLeft"; noFingers[8]="OtherRight";
         ArmRig fallbackRig=new ArmRig(noFingers,parents,offsets);
         FloatBuffer fallbackOut=buffer(); fallbackRig.pose(source,new Matrix4f[]{target,null},poles,fallbackOut);
@@ -117,6 +135,38 @@ public final class ArmTrackingTest {
             check(Math.abs(s.elbow().distance(shoulder)-1)<.0002f&&Math.abs(s.elbow().distance(s.wrist())-1)<.0002f,"Clamped/singular IK retains lengths");
         }
         check(ArmIk.solve(shoulder,elbow,wrist,new Vector3f(10,0,0),new Vector3f(0,1,0)).clamped(),"Unreachable target clamps");
+        ArmIk.Solution extended=ArmIk.solve(shoulder,elbow,wrist,new Vector3f(2.5f,0,0),new Vector3f(0,1,0),1.5f);
+        near(extended.wrist(),new Vector3f(2.5f,0,0),"Extended reach reaches physical target past native arm length");
+        check(!extended.clamped(),"Reach within extension budget is not clamped");
+        ArmIk.Solution bounded=ArmIk.solve(shoulder,elbow,wrist,new Vector3f(10,0,0),new Vector3f(0,1,0),1.5f);
+        check(bounded.clamped()&&bounded.wrist().length()<3,"Tracking outlier remains bounded by configured limit");
+        Matrix4f stretched=ArmIk.extended(new Matrix4f(),new Vector3f(1,0,0),new Vector3f(0,1.25f,0),new Vector3f());
+        near(stretched.transformPosition(new Vector3f(1,0,0)),new Vector3f(0,1.25f,0),"Axial mesh stretch reaches new segment endpoint");
+        check(Math.abs(stretched.transformDirection(new Vector3f(0,1,0)).length()-1)<.0002f,"Axial stretch retains segment thickness");
+        rejected(()->ArmIk.solve(shoulder,elbow,wrist,wrist,wrist,Float.NaN));
+        rejected(()->ArmIk.solve(shoulder,elbow,wrist,wrist,wrist,2));
+        ArmRig reachRig=rig(); FloatBuffer reachOut=buffer();
+        reachRig.pose(source,new Matrix4f[]{target,null},poles,reachOut,new Vector3f(),1.5f);
+        float nativeUpper=pos(model[1]).distance(pos(model[2])),nativeLower=pos(model[2]).distance(pos(model[3]));
+        Vector3f reachDirection=new Vector3f(pos(model[3])).sub(pos(model[1])).normalize();
+        Vector3f desiredWrist=new Vector3f(pos(model[1])).add(new Vector3f(reachDirection).mul((nativeUpper+nativeLower)*1.25f));
+        Vector3f desiredPalm=new Vector3f(desiredWrist).add(new Matrix4f(model[3]).transformDirection(reachRig.palmLocal(0)));
+        Matrix4f farGrip=new Matrix4f(target).setTranslation(desiredPalm);
+        reachRig.pose(source,new Matrix4f[]{farGrip,null},poles,reachOut,new Vector3f(),1.5f);
+        near(decode(reachOut,3).transformPosition(reachRig.palmLocal(0)),desiredPalm,"Palm reaches grip beyond avatar's original reach");
+        float solvedUpper=pos(decode(reachOut,1)).distance(pos(decode(reachOut,2)));
+        float solvedLower=pos(decode(reachOut,2)).distance(pos(decode(reachOut,3)));
+        check(solvedUpper>nativeUpper&&Math.abs(solvedUpper/nativeUpper-solvedLower/nativeLower)<.0002f,"Both segments extend proportionally");
+        near(decode(reachOut,3).getScale(new Vector3f()),model[3].getScale(new Vector3f()),"Hands are not enlarged with arm reach");
+        near(decode(reachOut,1).transformPosition(new Matrix4f(model[1]).invert().transformPosition(pos(model[2]))),pos(decode(reachOut,2)),"Upper mesh endpoint follows extended elbow");
+        near(decode(reachOut,2).transformPosition(new Matrix4f(model[2]).invert().transformPosition(pos(model[3]))),pos(decode(reachOut,3)),"Forearm mesh endpoint follows extended wrist");
+        Matrix4f stableHand=decode(reachOut,3);
+        for(int repeat=0;repeat<10;repeat++) reachRig.pose(source,new Matrix4f[]{farGrip,null},poles,reachOut,new Vector3f(),1.5f);
+        near(decode(reachOut,3),stableHand,"Repeated solves do not accumulate arm growth");
+        reachRig.pose(source,new Matrix4f[]{farGrip,null},poles,reachOut,new Vector3f(),1);
+        check(decode(reachOut,3).transformPosition(reachRig.palmLocal(0)).distance(desiredPalm)>.05f,"100 percent restores original reach cap");
+        reachRig.pose(source,new Matrix4f[]{target,null},poles,reachOut,new Vector3f(),1.5f);
+        check(Math.abs(pos(decode(reachOut,1)).distance(pos(decode(reachOut,2)))-nativeUpper)<.0002f,"Reach retracts to native length for a nearby target");
         rejected(()->ArmIk.solve(shoulder,shoulder,wrist,wrist,wrist));
         rejected(()->ArmIk.solve(shoulder,elbow,wrist,new Vector3f(Float.NaN),wrist));
         int[] invalid=parents.clone(); invalid[0]=1; rejected(()->new ArmRig(names,invalid,offsets));
@@ -172,6 +222,70 @@ public final class ArmTrackingTest {
         try(AutoCloseable scope=bridge.apply(frame,scene,head,new HandPoses(null,rightGrip))) {
             near(decode(a.data.matrixPalette,3),model[3],"Left tracking loss restores native hand while right remains tracked");
             check(AttachmentPoses.resolve(weapon.data.xfrm,weapon)==weapon.data.xfrm&&AttachmentPoses.resolve(otherHand.data.xfrm,otherHand)!=otherHand.data.xfrm,"Tracking loss restores only that hand's attachments");
+        }
+        // Full bridge regression: both controllers disappear (dashboard), or just one is occluded.
+        TrackedArms control=new TrackedArms();
+        try(AutoCloseable scope=control.apply(frame,scene,head,new HandPoses(grip,rightGrip))) {}
+        Matrix4f movedLeft=new Matrix4f(target).rotateX(.85f),movedRight=new Matrix4f(rightTarget).rotateZ(-.65f);
+        HandPoses resumedHands=new HandPoses(
+            pose(new Matrix4f(scene).invert().mul(world).mul(movedLeft.scale(-1,1,1))),
+            pose(new Matrix4f(scene).invert().mul(world).mul(movedRight.scale(-1,1,1))));
+        Matrix4f expectedLeft,expectedRight,expectedItem;
+        try(AutoCloseable scope=control.apply(frame,scene,head,resumedHands)) {
+            expectedLeft=decode(a.data.matrixPalette,3); expectedRight=decode(a.data.matrixPalette,7);
+            expectedItem=new Matrix4f(AttachmentPoses.resolve(weapon.data.xfrm,weapon));
+        }
+        for(int cycle=0;cycle<3;cycle++) {
+            try(AutoCloseable scope=bridge.apply(frame,scene,head,HandPoses.NONE)) {}
+            try(AutoCloseable scope=bridge.apply(frame,scene,head,new HandPoses(null,resumedHands.right()))) {}
+            try(AutoCloseable scope=bridge.apply(frame,scene,head,resumedHands)) {
+                near(decode(a.data.matrixPalette,3),expectedLeft,"Dashboard/occlusion preserves left orientation");
+                near(decode(a.data.matrixPalette,7),expectedRight,"Dashboard/occlusion preserves right orientation");
+                near(AttachmentPoses.resolve(weapon.data.xfrm,weapon),expectedItem,"Held item preserves orientation after resume");
+            }
+        }
+        Matrix4f[] standing=new Matrix4f[names.length]; Matrix4f standingItem;
+        try(AutoCloseable scope=bridge.apply(frame,scene,head,resumedHands)) {
+            for(int i=0;i<names.length;i++) standing[i]=decode(a.data.matrixPalette,i);
+            standingItem=new Matrix4f(AttachmentPoses.resolve(weapon.data.xfrm,weapon));
+        }
+        Vector3f modelDrop=new Vector3f(0,-.6f,0);
+        Vector3f sceneDrop=world.transformDirection(new Vector3f(modelDrop));
+        Vector3f localDrop=new Matrix4f(scene).invert().transformDirection(new Vector3f(sceneDrop));
+        HandPoses loweredHands=new HandPoses(
+            pose(resumedHands.left().matrix().translateLocal(localDrop.x,localDrop.y,localDrop.z)),
+            pose(resumedHands.right().matrix().translateLocal(localDrop.x,localDrop.y,localDrop.z)));
+        XrCamera.Pose loweredHead=pose(head.matrix().translateLocal(localDrop.x,localDrop.y,localDrop.z));
+        try(AutoCloseable scope=bridge.apply(frame,scene,loweredHead,loweredHands,sceneDrop)) {
+            near(decode(a.data.matrixPalette,0),standing[0],"Shoulder adjustment leaves native torso untouched");
+            for(int i=1;i<names.length;i++) {
+                Matrix4f expectedLowered=new Matrix4f(standing[i]).translateLocal(modelDrop.x,modelDrop.y,modelDrop.z);
+                near(decode(a.data.matrixPalette,i),expectedLowered,"Kneeling lowers arm bone without changing reach/rotation "+i);
+                near(decode(clothes.data.matrixPalette,i),expectedLowered,"Clothing follows lowered shoulders "+i);
+            }
+            Matrix4f expectedLoweredItem=new Matrix4f(weapon.world).invert()
+                .mul(new Matrix4f().translation(sceneDrop)).mul(weapon.world).mul(new Matrix4f(standingItem).transpose()).transpose();
+            near(AttachmentPoses.resolve(weapon.data.xfrm,weapon),expectedLoweredItem,"Held item follows kneeling hand exactly once");
+        }
+        try(AutoCloseable scope=bridge.apply(frame,scene,loweredHead,new HandPoses(null,loweredHands.right()),sceneDrop)) {
+            near(decode(a.data.matrixPalette,3),model[3],"Untracked hand retains native fallback while kneeling");
+        }
+        try(AutoCloseable scope=bridge.apply(frame,scene,head,resumedHands)) {
+            near(decode(a.data.matrixPalette,1),standing[1],"Standing again restores shoulder root");
+            near(decode(a.data.matrixPalette,3),standing[3],"Standing again restores tracked hand without drift");
+        }
+        check(a.data.matrixPalette==nativeA&&clothes.data.matrixPalette==nativeClothes,"Kneeling scopes restore original borrowed palettes");
+        XrCamera.Pose farPhysicalGrip=pose(new Matrix4f(scene).invert().mul(world).mul(new Matrix4f(farGrip).scale(-1,1,1)));
+        TrackedArms.setReachPercent(100);
+        try(AutoCloseable scope=bridge.apply(frame,scene,head,new HandPoses(farPhysicalGrip,null))) {
+            check(decode(a.data.matrixPalette,3).transformPosition(new Vector3f(.02f,0,0)).distance(desiredPalm)>.05f,"Configured 100 percent keeps original cap through bridge");
+        }
+        TrackedArms.setReachPercent(150);
+        try(AutoCloseable scope=bridge.apply(frame,scene,head,new HandPoses(farPhysicalGrip,null))) {
+            near(decode(a.data.matrixPalette,3).transformPosition(new Vector3f(.02f,0,0)),desiredPalm,"Configured extension reaches far controller through full bridge");
+            near(decode(clothes.data.matrixPalette,3),decode(a.data.matrixPalette,3),"Extended clothing and body agree");
+            near(new Matrix4f(AttachmentPoses.resolve(weapon.data.xfrm,weapon)).transpose().getScale(new Vector3f()),
+                new Matrix4f(nativeWeapon).transpose().getScale(new Vector3f()),"Held item keeps native size at extended reach");
         }
         Part broken=new Part(); broken.data.model.tag=new Object(); body.parts.add(broken);
         try(AutoCloseable scope=bridge.apply(frame,scene,head,hands)) {

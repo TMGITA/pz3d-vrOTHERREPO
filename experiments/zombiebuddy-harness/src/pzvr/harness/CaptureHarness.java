@@ -15,38 +15,26 @@ public final class CaptureHarness {
     private static Path root;
     private static volatile String status="Not configured";
     private static volatile boolean faulted;
-    private static boolean chordHeld;
-    private static boolean xrKeyHeld;
+    private static final Hotkeys hotkeys=new Hotkeys();
     private static void pollCaptureKey() {
         long window=org.lwjglx.opengl.Display.getWindow();
-        if(window==0 || glfwGetWindowAttrib(window,GLFW_FOCUSED)!=GLFW_TRUE) {
-            chordHeld=true; // Require release before accepting a chord after focus returns.
-            xrKeyHeld=true;
-            return;
-        }
+        boolean focused=window!=0 && glfwGetWindowAttrib(window,GLFW_FOCUSED)==GLFW_TRUE;
+        if(!focused) { hotkeys.poll(false,0,key -> false); return; }
         boolean ctrl=glfwGetKey(window,GLFW_KEY_LEFT_CONTROL)==GLFW_PRESS || glfwGetKey(window,GLFW_KEY_RIGHT_CONTROL)==GLFW_PRESS;
         boolean shift=glfwGetKey(window,GLFW_KEY_LEFT_SHIFT)==GLFW_PRESS || glfwGetKey(window,GLFW_KEY_RIGHT_SHIFT)==GLFW_PRESS;
         boolean alt=glfwGetKey(window,GLFW_KEY_LEFT_ALT)==GLFW_PRESS || glfwGetKey(window,GLFW_KEY_RIGHT_ALT)==GLFW_PRESS;
-        boolean modifiers=ctrl&&shift;
-        boolean down=glfwGetKey(window,GLFW_KEY_F10)==GLFW_PRESS && modifiers;
-        if(down && !chordHeld) System.out.println("[PZ3D VR Test] "+request());
-        chordHeld=down;
-        boolean xrDown=glfwGetKey(window,GLFW_KEY_SCROLL_LOCK)==GLFW_PRESS;
-        if(xrDown && !xrKeyHeld && ctrl) {
-            if(shift) {
-                if(alt) XrHarness.recenter();
-                else { pending.set(false); XrHarness.toggle(); }
-            } else if(alt) {
-                if(XrHarness.active()) XrHarness.toggleArmPreview(); else LiveMirror.toggle();
-            }
+        int actions=hotkeys.poll(true,(ctrl?1:0)|(shift?2:0)|(alt?4:0),key -> glfwGetKey(window,key)==GLFW_PRESS);
+        if((actions&(1<<Hotkeys.XR))!=0) { pending.set(false); XrHarness.toggle(); }
+        if((actions&(1<<Hotkeys.RECENTER))!=0) XrHarness.recenter();
+        if((actions&(1<<Hotkeys.PREVIEW))!=0) {
+            if(XrHarness.active()) XrHarness.toggleArmPreview(); else LiveMirror.toggle();
         }
-        // Latch the physical key, so changing modifiers while Scroll Lock is held cannot toggle XR.
-        xrKeyHeld=xrDown;
+        if((actions&(1<<Hotkeys.CAPTURE))!=0) System.out.println("[PZ3D VR Test] "+request());
     }
     public static void configure(VersionGate.Verified v,Installation i,Path output) { verified=v; installation=i; root=output; status="Ready"; }
     public static String status() { return status; }
     public static String request() {
-        if(XrHarness.active()) return "Stop OpenXR with Ctrl+Shift+Scroll Lock before saving a diagnostic PNG pair";
+        if(XrHarness.active()) return "Stop OpenXR using your Toggle OpenXR shortcut before saving a diagnostic PNG pair";
         if(faulted) return "Capture disabled after failure; restart after reviewing report";
         if(!pending.compareAndSet(false,true)) return "A capture is already pending";
         status="Capture requested; enter first-person PZ3D on foot";

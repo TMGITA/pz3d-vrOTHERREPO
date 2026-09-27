@@ -10,6 +10,8 @@ import pzvr.AttachmentPoses;
 
 /** Scoped render-snapshot substitutions: never writes original palette contents or AnimationPlayer. */
 public final class TrackedArms {
+    private static volatile float maxReach=1.5f;
+    public static void setReachPercent(int percent) { maxReach=Math.max(100,Math.min(175,percent))/100f; }
     private final IdentityHashMap<Object,Rig> rigs=new IdentityHashMap<>();
     private boolean disabled,announced;
     private record Rig(ArmRig solver) {}
@@ -17,9 +19,13 @@ public final class TrackedArms {
     public void reset() { rigs.clear(); buffers.clear(); disabled=false; announced=false; }
     public void recenter() { for(Rig rig:rigs.values()) rig.solver.recenter(); }
     public AutoCloseable apply(Object frame,Matrix4f sceneFromLocal,XrCamera.Pose head,HandPoses hands) {
+        return apply(frame,sceneFromLocal,head,hands,new Vector3f());
+    }
+    public AutoCloseable apply(Object frame,Matrix4f sceneFromLocal,XrCamera.Pose head,HandPoses hands,Vector3f shoulderShift) {
         Scope scope=new Scope();
+        float reach=maxReach; // One settings snapshot for every body/clothing part in this pair.
         if(disabled) return scope;
-        if(hands.left()==null && hands.right()==null) { recenter(); return scope; }
+        if(hands.left()==null && hands.right()==null) return scope;
         try {
             if(rigs.size()>128) rigs.clear();
             boolean found=false; int bufferIndex=0;
@@ -49,6 +55,7 @@ public final class TrackedArms {
                     }
                     bufferIndex++;
                     Matrix4f inverseWorld=new Matrix4f((Matrix4f)get(part,"world")).invert();
+                    Vector3f modelShift=inverseWorld.transformDirection(new Vector3f(shoulderShift));
                     Matrix4f modelFromLocal=inverseWorld.mul(sceneFromLocal);
                     Matrix4f[] targets=new Matrix4f[2]; Vector3f[] poles=new Vector3f[2];
                     for(int side=0;side<2;side++) {
@@ -57,7 +64,7 @@ public final class TrackedArms {
                         if(pose!=null) targets[side]=new Matrix4f(modelFromLocal).mul(pose.matrix()).scale(-1,1,1);
                         poles[side]=new Matrix4f(modelFromLocal).mul(head.matrix()).transformPosition(new Vector3f(side==0?-.55f:.55f,-.5f,-.1f));
                     }
-                    changes.put(data,rig.solver.pose(original,targets,poles,output));
+                    changes.put(data,rig.solver.pose(original,targets,poles,output,modelShift,reach));
                     scope.change(data,"matrixPalette",output);
                     scope.change(part,"arms",rig.solver.mask(hands.left()!=null,hands.right()!=null,(float[])get(part,"arms")));
                     scope.change(part,"limbs",rig.solver.mask(hands.left()!=null,hands.right()!=null,(float[])get(part,"limbs")));

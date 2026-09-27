@@ -25,6 +25,7 @@ public final class OpenXrSession implements AutoCloseable {
     private XrHands hands;
     private HandPoses handPoses=HandPoses.NONE;
     public HandPoses hands() { return handPoses; }
+    public boolean focused() { return focused; }
     private long recenterTime=Long.MAX_VALUE;
     private boolean recenter;
     private int fbo,uiReadFbo;

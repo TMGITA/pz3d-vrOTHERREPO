@@ -49,6 +49,19 @@ public final class XrCameraTest {
         var handScene=camera.sceneFromLocal().transformPosition(handLocal);
         check(near(handScene.x,10.4f)&&near(handScene.y,20.3f)&&near(handScene.z,1.5f),"Recentered hand is right/down/forward of body camera");
         check(camera.sceneFromLocal().determinant()<0,"Scene reflection explicit for controller rotation conversion");
+        var lowerHead=new XrCamera.Pose(anchor.x(),anchor.y()-.65f,anchor.z(),anchor.qx(),anchor.qy(),anchor.qz(),anchor.qw());
+        camera.eyes(lowerHead,List.of(view(lowerHead),view(lowerHead))).create(base);
+        var shift=camera.shoulderShift();
+        check(near(shift.x,0)&&near(shift.y,0)&&near(shift.z,-.65f),"Physical kneeling lowers shoulders in scene space");
+        var nativeCrouch=new PairHooks.Base(10,20,.9f,1,0,0,1.2f,800,800);
+        camera.eyes(lowerHead,List.of(view(lowerHead),view(lowerHead))).create(nativeCrouch);
+        check(near(camera.shoulderShift().z,-.65f),"Native camera crouch is not counted twice");
+        camera.eyes(anchor,List.of(view(anchor),view(anchor))).create(nativeCrouch);
+        check(camera.shoulderShift().length()<.0001f,"Standing restores roots even with native crouch active");
+        camera.eyes(new XrCamera.Pose(anchor.x()+.3f,anchor.y(),anchor.z(),0,0,q,q),views).create(base);
+        check(camera.shoulderShift().length()<.0001f,"Head rotation and horizontal movement do not lower shoulders");
+        camera.recenter(); camera.eyes(lowerHead,List.of(view(lowerHead),view(lowerHead))).create(base);
+        check(camera.shoulderShift().length()<.0001f,"Explicit recenter establishes a new physical height reference");
         System.out.println("XR camera checks passed: "+checks);
     }
 }

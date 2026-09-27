@@ -1,5 +1,49 @@
 # Harness validation — 2026-09-27
 
+## Bounded controller reach extension (0.6.5)
+
+The arm solver now extends upper-arm and forearm lengths proportionally only when a tracked target exceeds native reach. Extension is capped by a persisted Mods setting (100–175%, default 150%). Segment palette transforms stretch along the bone direction so mesh endpoints follow the new joints; wrist/finger transforms, palm offset, and item scale stay independent. This is automatic bounded extension with a manual limit, not anatomical arm-length measurement. Gameplay attack range is unchanged.
+
+The full harness suite passed. Final arm tests passed 982 assertions, including beyond-native controller targets, proportional lengths, mesh endpoint continuity, preserved thickness and hand/item size, bounded outliers, retraction, no accumulated growth, settings applied through the full bridge, and prior kneeling/tracking-loss regressions. The standalone Lua test confirmed the new default, Apply, and native settings save/load. Evidence: `build/runs/20260927-185814-728/` (`arm-tracking-final.log` includes the final bridge checks).
+
+Physical-headset fit and sleeve/elbow appearance remain unverified. Targets beyond the configured limit still clamp. No game launch or installation was performed.
+
+## Physical headset height and shoulder roots (0.6.4)
+
+Physical headset height relative to the camera's recenter anchor now supplies a displacement for tracked arm roots. The camera converts only the LOCAL-space Y-height delta into scene space; each skin part converts that direction into model space before the arm solver. The shoulder, reference elbow, and reference wrist translate together, preserving native segment lengths. Native camera height/crouch changes are not included in this additional displacement. Arm palette and item overrides retain their existing per-pair scope and restoration behavior.
+
+The full harness suite passed, including 933 arm/attachment assertions and 47 camera checks. New checks cover lowering both arms and clothing, held-item translation exactly once, untracked-hand fallback, unchanged torso, restoration on standing, original palette restoration, physical height versus native camera height, horizontal/head-rotation exclusion, and recenter resetting the height reference. Evidence: `build/runs/20260927-185040-653/`. Packaged classes match the tested build.
+
+Physical-headset confirmation remains pending, especially shoulder/torso mesh blending. This is a first-person arm-root correction, not full-body IK or gameplay crouch detection. Avatar reach limits are unchanged. No game launch or installation was performed.
+
+## Delayed recenter (0.6.3)
+
+The recenter shortcut schedules a five-second countdown, allowing both hands to return to controllers before camera and arm calibration. A vanilla UI overlay shows remaining seconds, tracking/focus wait, and completion; the existing VR UI panel carries that overlay. Repeating the shortcut restarts the timer; XR stop or preview-mode change cancels it. Completion requires XR focus and the controller sides tracked when the request was made. No-controller use remains supported.
+
+The full `Test.ps1` suite passed, including 11 deterministic timer checks for delayed execution, focus/tracking wait, single completion, notice expiry, restart, and cancellation. Existing arm, capture, mirror, XR lifecycle, camera, timing, hotkey, OpenGL, and copied-class checks passed. Evidence: `build/runs/20260927-183723-114/`. Standalone Lua tests passed for idle/active overlay drawing, missing bridge, and existing settings persistence. The package was checked against the compiled classes and Lua source.
+
+No game was launched or installed. Physical-headset countdown readability and calibration timing remain user-test items.
+
+## Hand rotation after tracking interruption (0.6.2)
+
+User reported downward-pointing hands at neutral controller orientation, especially after opening the SteamVR dashboard. Inspection found two automatic calibration resets: `TrackedArms.apply` called recenter when both hands were missing, and `ArmRig.pose` cleared each missing hand's wrist correction and palm offset. Resumption therefore learned a fresh correction from an arbitrary controller/native-animation pose.
+
+Both loss paths now preserve calibration while retaining per-frame native-pose fallback. Runtime LOCAL-space change notifications reanchor the camera without learning a new hand correction. Explicit user recenter, session restart, and synthetic-preview mode changes retain their existing calibration-reset behavior.
+
+`Test.ps1` passed, including 596 arm/attachment assertions and the existing lifecycle, hotkey, camera, timing, OpenGL, and four-class retransformation checks. New regressions cover changed native animation/controller rotation on resume, return to neutral, explicit recalibration, repeated both-hand loss and one-hand occlusion, and held-item orientation. Running those tests against isolated copies of each pre-fix class failed at the expected orientation assertions; both pass with the fixes. Evidence: `build/runs/20260927-183149-034/` and `build/rotation-regression-before/`.
+
+Physical-headset dashboard/resume confirmation remains pending. No game launch or installation was performed. Initial orientation still depends on the first calibrated pose; this is not an anatomical mapping redesign.
+
+## Remappable shortcuts (0.6.1)
+
+Added a built-in Options > Mods > PZ3D VR page with four action keys and independent Ctrl/Shift/Alt selectors. Default chords remain unchanged. Java receives immutable settings and keeps polling physical keys on the render thread; it does not depend on Lua key events filtered by PZ3D. Bindings use vanilla ModOptions persistence. Options/text entry suppress input, and settings/focus changes require key release. Exact duplicate chords are inactive.
+
+Validation: `Test.ps1` passed all 559 checks across capture, mirror, XR lifecycle, OpenGL, camera, timing, configurable hotkeys, and tracked arms; all four copied target classes retransformed without initialization. The 21 new hotkey checks cover remapping all actions, native key-code conversion, clearing, exact modifiers, physical-key latching, duplicate chords, settings changes, and focus/UI release behavior. Evidence: `build/runs/20260927-182613-514/`.
+
+`tests/ModOptionsTest.py` also passed using the installed vanilla `PZAPI/ModOptions.lua` under workspace-local Lupa 2.8 / Lua 5.1, with in-memory file and game-service stubs. It checks registration/defaults, the key-picker Apply bridge, clearing, native save/load, options/text-entry suppression, and an unavailable Java bridge. To reproduce, install `lupa==2.8` into `build/lua-test-tools` and pass your vanilla `PZAPI/ModOptions.lua` path to the script. It does not run game or dependency-mod entrypoints or write game settings.
+
+Still pending: user-run in-game confirmation that the settings page appears, remapping applies, and choices persist after restart. The agent did not install the mod or launch the game. No native OpenXR runtime test was repeated for this input/settings change.
+
 The package was built and tested in the workspace. The agent did not launch Project Zomboid or install the harness. The user installed and launched version 0.1.0; its live log confirms successful loading, but no capture was requested. Version 0.1.1 subsequently captured a live stereo pair in the user-run game at 12:36:17 EDT.
 
 | Check | Result |

@@ -69,6 +69,14 @@ public final class ArmRig {
     }
     /** Source remains untouched. Buffer positions/limits are preserved; output uses vanilla upload layout. */
     public PoseChanges pose(FloatBuffer source,Matrix4f[] targets,Vector3f[] poles,FloatBuffer output) {
+        return pose(source,targets,poles,output,new Vector3f());
+    }
+    public PoseChanges pose(FloatBuffer source,Matrix4f[] targets,Vector3f[] poles,FloatBuffer output,Vector3f shoulderShift) {
+        return pose(source,targets,poles,output,shoulderShift,1);
+    }
+    public PoseChanges pose(FloatBuffer source,Matrix4f[] targets,Vector3f[] poles,FloatBuffer output,Vector3f shoulderShift,float maxReach) {
+        if(!Float.isFinite(shoulderShift.x)||!Float.isFinite(shoulderShift.y)||!Float.isFinite(shoulderShift.z))
+            throw new IllegalArgumentException("Invalid shoulder displacement");
         PoseChanges changes=new PoseChanges(); boolean[] changed=new boolean[names.length];
         int n=names.length;
         if(source.remaining()!=n*16 || output.capacity()<n*16) throw new IllegalArgumentException("Palette size mismatch");
@@ -83,10 +91,13 @@ public final class ArmRig {
             posed[i]=new Matrix4f(model[i]);
         }
         for(int side=0;side<2;side++) {
-            Matrix4f target=targets[side]; if(target==null) { wristCorrection[side]=null; palmLocal[side]=null; continue; }
+            // Missing input restores the native pose for this frame, not the calibration.
+            // Dashboard/focus loss can last many frames and the controller may move meanwhile.
+            Matrix4f target=targets[side]; if(target==null) continue;
             if(!target.isFinite()||target.determinant()<=0) throw new IllegalArgumentException("Invalid hand target basis");
             int upper=chain[side][0],lower=chain[side][1],hand=chain[side][2];
             Vector3f shoulder=model[upper].getTranslation(new Vector3f()),elbow=model[lower].getTranslation(new Vector3f()),wrist=model[hand].getTranslation(new Vector3f());
+            shoulder.add(shoulderShift); elbow.add(shoulderShift); wrist.add(shoulderShift);
             Quaternionf orientation=target.getUnnormalizedRotation(new Quaternionf()).normalize();
             if(wristCorrection[side]==null) wristCorrection[side]=new Quaternionf(orientation).invert().mul(model[hand].getUnnormalizedRotation(new Quaternionf()).normalize());
             if(palmLocal[side]==null) palmLocal[side]=palm(model,side);
@@ -94,9 +105,9 @@ public final class ArmRig {
             Matrix4f h=new Matrix4f().rotate(orientation.mul(wristCorrection[side])).scale(scale);
             Vector3f palmOffset=h.transformDirection(new Vector3f(palmLocal[side]));
             Vector3f wristTarget=target.getTranslation(new Vector3f()).sub(palmOffset);
-            ArmIk.Solution solution=ArmIk.solve(shoulder,elbow,wrist,wristTarget,poles[side]);
-            Matrix4f u=ArmIk.moved(model[upper],new Vector3f(elbow).sub(shoulder),new Vector3f(solution.elbow()).sub(shoulder),shoulder);
-            Matrix4f l=ArmIk.moved(model[lower],new Vector3f(wrist).sub(elbow),new Vector3f(solution.wrist()).sub(solution.elbow()),solution.elbow());
+            ArmIk.Solution solution=ArmIk.solve(shoulder,elbow,wrist,wristTarget,poles[side],maxReach);
+            Matrix4f u=ArmIk.extended(model[upper],new Vector3f(elbow).sub(shoulder),new Vector3f(solution.elbow()).sub(shoulder),shoulder);
+            Matrix4f l=ArmIk.extended(model[lower],new Vector3f(wrist).sub(elbow),new Vector3f(solution.wrist()).sub(solution.elbow()),solution.elbow());
             h.setTranslation(solution.wrist());
             Matrix4f du=new Matrix4f(u).mul(new Matrix4f(model[upper]).invert());
             Matrix4f dl=new Matrix4f(l).mul(new Matrix4f(model[lower]).invert());

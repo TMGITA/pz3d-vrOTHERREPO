@@ -31,7 +31,7 @@ public final class Main {
             Path output=Path.of(zombie.ZomboidFileSystem.instance.getCacheDir(),"PZ3D-VR-Test");
             installation=Installation.install(instrumentation,loader,originals);
             CaptureHarness.configure(verified,installation,output);
-            status="Ready: first person, on foot; Ctrl+Shift+Scroll Lock toggles OpenXR; Ctrl+Shift+Alt+Scroll Lock recenters; Ctrl+Alt+Scroll Lock previews arms in XR or desktop stereo outside XR; Ctrl+Shift+F10 captures";
+            status="Ready: first person, on foot; configure shortcuts in Options > Mods > PZ3D VR";
         } catch(Throwable error) {
             status="Disabled: "+error; error.printStackTrace();
         }
@@ -43,5 +43,11 @@ public final class Main {
         return CaptureHarness.request();
     }
     public static void tickXR() { XrHarness.watchdog(); }
+    public static String recenterStatus() { return XrHarness.recenterStatus(); }
+    public static void setArmReachPercent(int percent) { TrackedArms.setReachPercent(percent); }
+    public static void setHotkeys(int xr,int xrMods,int recenter,int recenterMods,int preview,int previewMods,int capture,int captureMods) {
+        Hotkeys.configure(xr,xrMods,recenter,recenterMods,preview,previewMods,capture,captureMods);
+    }
+    public static void blockHotkeys(boolean blocked) { Hotkeys.block(blocked); }
     public static String status() { return installation!=null && installation.ready()?CaptureHarness.status():status; }
 }
