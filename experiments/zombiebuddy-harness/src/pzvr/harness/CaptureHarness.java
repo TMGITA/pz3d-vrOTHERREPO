@@ -55,7 +55,7 @@ public final class CaptureHarness {
         if(!pending.compareAndSet(true,false)) return LiveMirror.draw(verified,frame,fresh,width,height);
         Path output=root.resolve(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss-SSS").format(LocalDateTime.now())+"-"+UUID.randomUUID().toString().substring(0,8));
         Properties report=new Properties();
-        report.setProperty("status","FAILED"); report.setProperty("gameVersion","42.20.4"); report.setProperty("pz3dVersion","0.2.2");
+        report.setProperty("status","FAILED"); report.setProperty("gameVersion","42.21.0"); report.setProperty("pz3dVersion","0.3.0");
         report.setProperty("headsetValidated","false"); report.setProperty("openxrSubmission","false");
         report.setProperty("freshFrame",Boolean.toString(fresh)); report.setProperty("separationSceneUnits","0.064");
         report.setProperty("renderThread",Thread.currentThread().getName());

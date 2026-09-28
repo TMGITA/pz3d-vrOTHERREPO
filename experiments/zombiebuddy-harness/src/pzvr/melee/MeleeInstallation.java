@@ -64,7 +64,7 @@ public final class MeleeInstallation implements ClassFileTransformer {
                     if(method.equals("attackAim")&&desc.equals("()Z")) kind="aim";
                 } else if(name.equals(TARGETS.get(1))) {
                     if(method.equals("calculateHitInfoList")&&desc.equals("("+CHR+")V")) kind="contacts";
-                    if(method.equals("processTreeHit")&&desc.equals("("+CHR+"Lzombie/inventory/types/HandWeapon;)Z")) kind="objects";
+                    if(method.equals("processTreeHit")&&desc.equals("(Ljava/util/List;"+CHR+"Lzombie/inventory/types/HandWeapon;)Z")) kind="objects";
                     if(method.equals("calculateAttackVars")&&desc.equals("(Lzombie/characters/IsoLivingCharacter;Lzombie/network/fields/hit/AttackVars;)V")) kind="vars";
                 } else if(name.equals(TARGETS.get(2))) {
                     if(method.equals("DoAttack")&&desc.equals("(FLjava/lang/String;)Z")) kind="start";
@@ -83,7 +83,8 @@ public final class MeleeInstallation implements ClassFileTransformer {
                     @Override public void visitCode() {
                         super.visitCode();
                         if(hook.equals("contacts")||hook.equals("objects")) {
-                            Label proceed=new Label(); super.visitVarInsn(ALOAD,1);
+                            // 42.21 adds the client hit list before the owner in processTreeHit.
+                            Label proceed=new Label(); super.visitVarInsn(ALOAD,hook.equals("objects")?2:1);
                             super.visitMethodInsn(INVOKESTATIC,"pzvr/contact/ContactRuntime",hook.equals("contacts")?"hitList":"owns","(Ljava/lang/Object;)Z",false);
                             super.visitJumpInsn(IFEQ,proceed);
                             if(hook.equals("objects")) {

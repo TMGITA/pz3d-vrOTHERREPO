@@ -1,8 +1,10 @@
 # PZ3D renderer boundary — milestone 3
 
-This is an **offline-tested renderer adapter**, not an installable VR mod. It rewrites copies of four classes from the exact installed PZ3D 0.2.2 binary and supplies an opt-in Java bridge for rendering a synthetic eye pair. It does not launch the game, install a transformer, change a signed JAR, or connect game rendering to OpenXR yet.
+This is an **offline-tested renderer adapter**, not an installable VR mod. It rewrites copies of four classes from the pinned PZ3D 0.3.0 binary and supplies an opt-in Java bridge for rendering a synthetic eye pair. It does not launch the game, install a transformer, change a signed JAR, or connect game rendering to OpenXR yet.
 
 Subsequent milestone: a [ZombieBuddy capture harness](../zombiebuddy-harness/README.md) now packages the bridge and shared transformer for the user's first in-game test. The offline adapter below remains available independently. The harness additionally intercepts capture-only errors and performs retained-style fallback; that behavior was not part of the original adapter-only milestone.
+
+Current compatibility target: Zomboid 42.21.0, PZ3D 0.3.0, ZombieBuddy 2.3.2. The architectural discussion below originated with PZ3D 0.2.2; the renderer boundaries were rechecked against 0.3.0.
 
 ## Build and test
 

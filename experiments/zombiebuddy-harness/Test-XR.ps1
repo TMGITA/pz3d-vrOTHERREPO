@@ -62,7 +62,7 @@ try {
     # Quote each argument for Windows command-line parsing. No shell evaluates these arguments.
     $package="$PSScriptRoot\dist\PZ3DVRTest\42.20.4\media\java\client\PZ3DVRTest.jar"
     $testClasses="$PSScriptRoot\build\gpu-test"
-    $game="$workspace\reference\project-zomboid\binaries\projectzomboid.jar"
+    $game="$workspace\reference\project-zomboid\42.21.0\projectzomboid.jar"
     $libs="$workspace\experiments\openxr-diagnostic\lib\*"
     if ($Mode -eq 'missing') { $env:XR_RUNTIME_JSON="$run\intentionally-missing-runtime.json" }
     $arguments = @('--enable-native-access=ALL-UNNAMED', '-cp', "$testClasses;$package;$libs;$game", 'OpenXrSmokeTest', $Mode)

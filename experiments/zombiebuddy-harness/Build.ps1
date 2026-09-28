@@ -5,8 +5,8 @@ $root=(Resolve-Path "$PSScriptRoot\..\..").Path
 & "$root\experiments\pz3d-adapter\Build.ps1"
 $javac=Get-ChildItem "$root\external\tools\jdk25" -Filter javac.exe -Recurse | Select-Object -First 1 -ExpandProperty FullName
 $jar=Join-Path (Split-Path $javac) jar.exe
-$game="$root\reference\project-zomboid\binaries\projectzomboid.jar"
-$pz="$root\reference\pz3d\42.20.4\media\java\client\PZ3D-0.2.2.jar"
+$game="$root\reference\project-zomboid\42.21.0\projectzomboid.jar"
+$pz="$root\reference\pz3d\0.3.0\PZ3D-0.3.0.jar"
 $zb="$root\reference\zombiebuddy\binaries\ZombieBuddy.jar"
 $classes="$PSScriptRoot\build\classes"
 $adapter="$root\experiments\pz3d-adapter\build\classes"

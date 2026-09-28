@@ -1,4 +1,22 @@
-# Harness validation — 2026-09-27
+# Harness validation
+
+## Zomboid 42.21.0 / PZ3D 0.3.0 compatibility (0.9.1, 2026-09-28)
+
+The user's current console identifies Zomboid 42.21.0 and PZ3D 0.3.0; the VR mod is absent from the loader list. The locally installed prototype descriptor reports 0.4.0 and caps Zomboid at 42.20.4. Source 0.9.0 had the same game-version restriction. The installed ZombieBuddy JAR is byte-identical to the supported 2.3.2 copy despite the reported Workshop update. A separate subscribed temporary-fix mod is not the ZombieBuddy JAR identified in the current log and is not certified by this build.
+
+Updated exact game/PZ3D hash pins, descriptor limits, build/test reference paths and failure-report version labels. The package remains under `42.20.4` for installation continuity, with `versionMin` and `versionMax` both set to 42.21.0. Unknown binaries are still rejected. Replace the old folder with the new package; editing its version limits alone is insufficient.
+
+Inspection of copied PZ3D 0.3.0 shows unchanged renderer preparation/eye boundaries, attachment upload and reflection layouts used by the adapter. The first updated-binary test correctly rejected CombatManager: 42.21.0 added a leading `List` argument to `processTreeHit`. The scenery guard now matches the new descriptor and reads the owner from local slot 2. Its synthetic fixture now uses that signature, checks that owned contact attacks suppress scenery effects and clear cached objects, and preserves ordinary unowned behavior. The native SwipeStatePlayer and low-level Controller/Controllers class bytes are unchanged. Native multiplayer hit aggregation changed, but this prototype remains single-player only.
+
+Validation: the full harness suite passed against the new copied binaries, including eleven actual class retransforms without initialization, 16 melee hook contracts, 29 contact adapter checks, 20 contact geometry checks, 47 earlier melee adapter checks, 982 arm checks, 31 controller lifecycle checks, and existing rendering, XR lifecycle, mapping, timing and shortcut suites. Evidence: `build/runs/20260928-182626-253/` and `build/controller-lifecycle.log`. Lua settings/recenter UI checks passed against the installed 42.21.0 ModOptions with mocked game services and I/O. The offline renderer adapter suite also passed 63 checks.
+
+No game/mod entry point was executed and no installed game, Workshop or user-data files were changed. This establishes build, bytecode and fixture compatibility; a user-run game launch, XR session and combat test are still needed to confirm live behavior. No additional physical-headset validation is claimed.
+
+Pinned SHA-256 values:
+
+- Zomboid: `e1a69eb743ede60b213a0fe7f8b83d4fcab773036d256cc4543a336f3b058a33`
+- PZ3D: `e8ddcdb6047dfe1bffe017aceda12169497f60a19d4039a171d44199a61df57d`
+- ZombieBuddy: `6dd95cedce60f03bf8b8cefd0d19eb156230e0d54bffa07de9da5212a06c7be6`
 
 ## Contact-timed baseball bat pilot (0.9.0)
 

@@ -7,13 +7,13 @@ public class CombatManager {
  public static CombatManager getInstance(){return instance;}
  private void calculateAttackVars(IsoLivingCharacter p,zombie.network.fields.hit.AttackVars vars){}
  public void calculateHitInfoList(IsoGameCharacter p){nativeLists++;}
- private boolean processTreeHit(IsoGameCharacter p,zombie.inventory.types.HandWeapon w){objectEffects++;return true;}
- public boolean testObjects(IsoGameCharacter p,zombie.inventory.types.HandWeapon w){return processTreeHit(p,w);}
+ private boolean processTreeHit(java.util.List<?> hits,IsoGameCharacter p,zombie.inventory.types.HandWeapon w){objectEffects++;return true;}
+ public boolean testObjects(IsoGameCharacter p,zombie.inventory.types.HandWeapon w){return processTreeHit(java.util.List.of(),p,w);}
  public void attackCollisionCheck(IsoGameCharacter p,zombie.inventory.types.HandWeapon w,zombie.ai.states.SwipeStatePlayer state,AttackType type){
   calculateHitInfoList(p);if(p.getHitInfoList().isEmpty())throw new AssertionError("Missing contact hit list");
   impacts++;lastTarget=(IsoZombie)p.getHitInfoList().get(0).getObject();
   objHit=new zombie.iso.IsoObject();treeHit=new zombie.iso.objects.IsoTree();
-  if(processTreeHit(p,w)||objHit!=null||treeHit!=null)throw new AssertionError("Contact scenery effects were not suppressed");
+  if(processTreeHit(java.util.List.of(),p,w)||objHit!=null||treeHit!=null)throw new AssertionError("Contact scenery effects were not suppressed");
   p.set(zombie.ai.states.SwipeStatePlayer.ATTACKED,true);
  }
 }

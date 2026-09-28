@@ -4,7 +4,7 @@ $ErrorActionPreference='Stop'
 $root=(Resolve-Path "$PSScriptRoot\..\..").Path
 $javac=Get-ChildItem "$root\external\tools\jdk25" -Filter javac.exe -Recurse | Select-Object -First 1 -ExpandProperty FullName
 $java=Join-Path (Split-Path $javac) java.exe
-$game="$root\reference\project-zomboid\binaries\projectzomboid.jar"
+$game="$root\reference\project-zomboid\42.21.0\projectzomboid.jar"
 $zb="$root\reference\zombiebuddy\binaries\ZombieBuddy.jar"
 $cf="$PSScriptRoot\build\controller-fixtures"
 New-Item -ItemType Directory -Force $cf | Out-Null

@@ -7,8 +7,8 @@ import java.util.HexFormat;
 /** A mismatch is a hard failure. Inputs are read only. */
 public final class VersionGate {
     private VersionGate() {}
-    public static final String GAME="80e405a4bfc42f6072e75b3735f458a6514143da011d3226007ded305a442f44";
-    public static final String PZ3D="75cf9b39851b2a8f71fd9e3e3d30620ef1f5c5006e0f1af9bf974b4a800486a5";
+    public static final String GAME="e1a69eb743ede60b213a0fe7f8b83d4fcab773036d256cc4543a336f3b058a33";
+    public static final String PZ3D="e8ddcdb6047dfe1bffe017aceda12169497f60a19d4039a171d44199a61df57d";
     public static final String ZB="6dd95cedce60f03bf8b8cefd0d19eb156230e0d54bffa07de9da5212a06c7be6";
     public static final class Verified { private Verified() {} }
     public static Verified verify(Path game,Path pz3d,Path zombieBuddy) throws Exception {

@@ -1,6 +1,6 @@
 # PZ3D VR prototype
 
-Experimental OpenXR support for Project Zomboid through PZ3D and ZombieBuddy. Current release: **[v0.9.0 prerelease](https://github.com/kilroy94/pz3d-vr/releases/tag/v0.9.0)**, Windows x64.
+Experimental OpenXR support for Project Zomboid through PZ3D and ZombieBuddy. Current release: **[v0.9.1 prerelease](https://github.com/kilroy94/pz3d-vr/releases/tag/v0.9.1)**, Windows x64, for Zomboid **42.21.0** and PZ3D **0.3.0**. The older v0.9.0 release targets Zomboid 42.20.4 / PZ3D 0.2.2.
 
 The prototype now includes stereo headset rendering, head tracking, the vanilla UI in VR, tracked first-person arms and held items, optional VR-controller gamepad input, and two experimental motion-melee modes. It is under active development and is not a complete VR conversion.
 
@@ -23,22 +23,22 @@ Live desktop stereo, simulated-headset output, and the vanilla UI have been conf
 
 The harness checks exact binary hashes for these versions:
 
-- Project Zomboid **42.20.4**
-- PZ3D **0.2.2**
+- Project Zomboid **42.21.0**
+- PZ3D **0.3.0**
 - ZombieBuddy **2.3.2**
 
 Obtain these separately. This repository contains the prototype source and synthetic test fixtures, not copies of the game or either dependency. Headset output requires a working OpenXR runtime, such as SteamVR configured for OpenXR. Desktop stereo does not require a headset or VR runtime. Start with a disposable single-player save, in first person and on foot.
 
 ## Using the prototype
 
-See the [mod instructions](experiments/zombiebuddy-harness/README.md) for installation, runtime setup, controls, and limitations. Download the [v0.9.0 prerelease](https://github.com/kilroy94/pz3d-vr/releases/tag/v0.9.0), or build it using the steps below.
+See the [mod instructions](experiments/zombiebuddy-harness/README.md) for installation, runtime setup, controls, and limitations. Download the [v0.9.1 prerelease](https://github.com/kilroy94/pz3d-vr/releases/tag/v0.9.1), or build it using the steps below. Do not use the older v0.9.0 release with the updated game.
 
-1. Close the game and extract `PZ3DVRTest-0.9.0.zip` into your local mods directory, normally `%USERPROFILE%\Zomboid\mods`. The descriptor should be at `PZ3DVRTest\42.20.4\mod.info`. Replace the old prototype folder when updating.
+1. Close the game and extract `PZ3DVRTest-0.9.1.zip` into your local mods directory, normally `%USERPROFILE%\Zomboid\mods`. The descriptor should be at `PZ3DVRTest\42.20.4\mod.info`. Replace the old prototype folder when updating.
 2. Enable ZombieBuddy, PZ3D, and **PZ3D Stereo Capture Test [Java]** for the test save. Approve the updated prototype JAR if ZombieBuddy prompts.
 3. Start your VR runtime, load the save, enter PZ3D with **Insert**, and use first person on foot. Toggle OpenXR with the shortcut below.
 4. Recenter while upright: press the shortcut, return both hands to the controllers, face forward, and hold a neutral pose during the five-second countdown.
 
-The in-game mod name still reflects the original capture harness. No game or Workshop JAR needs to be replaced.
+The package retains its `42.20.4` directory name for installation continuity; its descriptor now requires exactly 42.21.0. Replace the old folder rather than editing the old version limits. The in-game mod name still reflects the original capture harness. No game or Workshop JAR needs to be replaced.
 
 Shortcuts are remappable in **Options > Mods > PZ3D VR**. Select a keyboard key and modifiers, then press **Apply**. The defaults are:
 
@@ -104,8 +104,8 @@ Copy the following JARs from your own matching installations into these local pa
 
 | Dependency | Destination |
 |---|---|
-| projectzomboid.jar | reference/project-zomboid/binaries/projectzomboid.jar |
-| PZ3D-0.2.2.jar | reference/pz3d/42.20.4/media/java/client/PZ3D-0.2.2.jar |
+| projectzomboid.jar | reference/project-zomboid/42.21.0/projectzomboid.jar |
+| PZ3D-0.3.0.jar | reference/pz3d/0.3.0/PZ3D-0.3.0.jar |
 | ZombieBuddy.jar | reference/zombiebuddy/binaries/ZombieBuddy.jar |
 
 Then build and run the local suite:
@@ -114,7 +114,7 @@ Then build and run the local suite:
 powershell -NoProfile -ExecutionPolicy Bypass -File experiments/zombiebuddy-harness/Test.ps1
 ```
 
-This produces `experiments/zombiebuddy-harness/dist/PZ3DVRTest-0.9.0.zip`. The suite uses synthetic fixtures, copied-class inspection/retransformation without initialization, and standalone OpenGL checks. It does not install the mod or launch the game. Native OpenXR smoke tests are separate; see the harness instructions. Do not run a competing test scene while the game is using XR.
+This produces `experiments/zombiebuddy-harness/dist/PZ3DVRTest-0.9.1.zip`. The suite uses synthetic fixtures, copied-class inspection/retransformation without initialization, and standalone OpenGL checks. It does not install the mod or launch the game. Native OpenXR smoke tests are separate; see the harness instructions. Do not run a competing test scene while the game is using XR.
 
 ## Project layout
 
