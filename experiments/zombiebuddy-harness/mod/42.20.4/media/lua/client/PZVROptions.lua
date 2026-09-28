@@ -18,6 +18,26 @@ options:addDescription("Hold the selected modifiers before pressing the key. Ext
 options:addSeparator()
 options:addSlider("armReachPercent", "Maximum arm reach (%)", 100, 175, 5, 150)
 options:addDescription("Arms extend only when needed to reach the tracked controllers, up to this percentage of the character's normal arm length. Hands and items keep their size. 100 restores the original reach limit. Higher limits can visibly stretch sleeves and elbows.")
+options:addSeparator()
+local melee = options:addComboBox("meleeMode", "Motion melee prototype")
+melee:addItem("Off", true)
+melee:addItem("Diagnostics only (no attacks)", false)
+melee:addItem("Live armed melee (animation-timed)", false)
+melee:addItem("Bat contact diagnostics (no attacks)", false)
+melee:addItem("Bat contact-timed attacks", false)
+options:addDescription("Contact modes: plain Base.BaseballBat against standing zombies only. Hold the right trigger and swing the rendered bat into a target; release between attacks. Contact resolves through native combat as soon as its attack state is ready, within 150 ms. Approximate bat/body capsules; no headshot, floor, scenery, or multiplayer contact attacks. Enable Allow motion melee with gamepad input for hybrid movement.")
+options:addDescription("Hold the right trigger and swing the primary weapon hand. Release the trigger between swings; keep holding until the native attack finishes. Uses character facing and animation-timed hits. Swing weapons only; no firearms, shoves, stomps, knives, spears, or chainsaws in this prototype. Begin with Diagnostics only and inspect [PZ3D VR Melee] in console.txt.")
+
+options:addSeparator()
+local controller = options:addComboBox("controllerMode", "VR controllers as gamepad")
+controller:addItem("Off", true)
+controller:addItem("Input diagnostics only", false)
+controller:addItem("Gamepad", false)
+controller:addItem("Gamepad with diagnostics", false)
+options:addDescription("Quest Touch: enable OpenXR, return controls to neutral, then enable/assign PZ VR Gamepad in vanilla controller settings. Menu tap = Start; hold Menu + left stick = D-pad; Menu + X = Back. The runtime may reserve Menu. Off neutralizes an already registered gamepad until restart. Diagnostics appear in console.txt.")
+
+options:addTickBox("allowMotionMeleeWithGamepad", "Allow motion melee with gamepad input", false)
+options:addDescription("When checked, gamepad movement and buttons remain available alongside the selected Motion melee mode. While motion melee is set to Diagnostics or Live, the right trigger is reserved for it and native gamepad RT stays released, including in menus and for firearms. Set Motion melee to Off to restore RT. Return controls to neutral after changing this setting. Unchecked preserves gamepad-only behavior.")
 
 local function sync()
     if not PZVRStereo or not PZVRStereo.setHotkeys then return end
@@ -30,6 +50,9 @@ local function sync()
     if PZVRStereo.setArmReachPercent then
         PZVRStereo.setArmReachPercent(math.floor(options:getOption("armReachPercent"):getValue() + 0.5))
     end
+    if PZVRStereo.setAllowMotionMeleeWithGamepad then PZVRStereo.setAllowMotionMeleeWithGamepad(options:getOption("allowMotionMeleeWithGamepad"):getValue()) end
+    if PZVRStereo.setControllerMode then PZVRStereo.setControllerMode(options:getOption("controllerMode"):getValue() - 1) end
+    if PZVRStereo.setMeleeMode then PZVRStereo.setMeleeMode(options:getOption("meleeMode"):getValue() - 1) end
 end
 function options:apply()
     -- Vanilla's mod key picker edits its UI record separately from the saved option.
@@ -54,3 +77,30 @@ local function guardSettings()
 end
 Events.OnTickEvenPaused.Add(guardSettings)
 Events.OnMainMenuEnter.Add(guardSettings)
+
+-- Only invoked when a physical pad claims the bridge slot. Native disconnect runs first.
+Events.OnGamepadDisconnect.Add(function(id)
+    if not PZVRStereo or not PZVRStereo.isBridgeController or not PZVRStereo.isBridgeController(id) then return end
+    if not JoypadState then return end
+    local controller = JoypadState.controllers[id]
+    if controller and controller.joypad then
+        local data = controller.joypad
+        if data.disconnectedUI then
+            data.disconnectedUI:removeFromUIManager()
+            data.disconnectedUI = nil
+        end
+        if data.player == 0 then
+            if ISJoypadDisconnectedUI and ISJoypadDisconnectedUI.setKeyboardMouseActivated then
+                ISJoypadDisconnectedUI.setKeyboardMouseActivated()
+            else
+                JoypadState.useKeyboardMouse()
+            end
+        end
+        if data.focus then data.focus:onLoseJoypadFocus(data) end
+        data.focus = nil
+        if data.player then JoypadState.players[data.player + 1] = nil end
+        data.player = nil
+        data.controller = nil
+        controller.joypad = nil
+    end
+end)

@@ -1,0 +1,1 @@
+package zombie.iso.objects;public class IsoTree extends zombie.iso.IsoObject {}

@@ -1,0 +1,1 @@
+package zombie.inventory.types; public enum WeaponType { ONE_HANDED,TWO_HANDED,HEAVY,KNIFE,SPEAR,CHAINSAW,THROWING,HANDGUN,UNARMED; public static WeaponType getWeaponType(HandWeapon w){return w.type;} }

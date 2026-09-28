@@ -1,0 +1,1 @@
+package com.pavelvoronin.pz3d; public class NativeAvatar { public static boolean permitted=true; public static boolean owns(zombie.characters.IsoGameCharacter p){return p!=null;} public static boolean controls(zombie.characters.IsoGameCharacter p){return permitted;} }

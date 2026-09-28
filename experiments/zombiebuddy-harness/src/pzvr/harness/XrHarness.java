@@ -27,6 +27,7 @@ public final class XrHarness {
     }
     public static void recenter() {
         if(!active) return;
+        pzvr.melee.MeleeInput.reset();
         HandPoses hands=session.hands();
         recenterHands=(hands.left()!=null?1:0)|(hands.right()!=null?2:0);
         recenterCountdown.request(System.nanoTime());
@@ -36,11 +37,14 @@ public final class XrHarness {
     public static void toggleArmPreview() {
         if(!active) { OpenXrSession.log("Start OpenXR before toggling synthetic arm preview"); return; }
         armPreview=!armPreview; arms.recenter();
+        pzvr.melee.MeleeInput.reset();
         recenterCountdown.cancel();
         OpenXrSession.log("Synthetic arm preview "+(armPreview?"ON":"OFF; using tracked controllers"));
     }
     public static void stop(String reason) {
         active=false;
+        pzvr.input.ControllerBridge.clear();
+        pzvr.melee.MeleeInput.reset();
         recenterCountdown.cancel();
         arms.reset(); armPreview=false;
         if(mirror!=null) { mirror.close(); mirror=null; }
@@ -63,12 +67,15 @@ public final class XrHarness {
             boolean rendered=session.frame((head,views,sink)-> {
                 // A runtime reference-space change reanchors the camera; it is not a user
                 // request to learn a new controller-to-hand orientation from an arbitrary pose.
-                if(session.consumeRecenter()) camera.recenter();
+                if(session.consumeRecenter()) { camera.recenter(); pzvr.melee.MeleeInput.reset(); }
                 HandPoses hands=armPreview?TrackedArms.synthetic(head,System.nanoTime()*1e-9):session.hands();
                 boolean tracked=((recenterHands&1)==0 || hands.left()!=null) && ((recenterHands&2)==0 || hands.right()!=null);
                 if(recenterCountdown.update(System.nanoTime(),session.focused() && tracked)) {
                     camera.recenter(); arms.recenter(); OpenXrSession.log("Recenter complete");
+                    pzvr.melee.MeleeInput.reset();
                 }
+                pzvr.melee.MeleeInput.sample(System.nanoTime(),session.handPoseTime(),hands.right(),head,session.combatHeld(),
+                    session.focused() && session.combatTracking() && !armPreview && !recenterCountdown.pending());
                 mirror.beginPair(); invoked[0]=true;
                 FrameTiming timing=session.timing();
                 PairHooks.render(verified,frame,fresh,camera.eyes(head,views),new PairHooks.Sink() {
@@ -92,6 +99,7 @@ public final class XrHarness {
                 timing.add(FrameTiming.Stage.MIRROR_PRESENT,System.nanoTime()-stamp);
             });
             lastDraw=System.nanoTime();
+            if(!rendered) { pzvr.melee.MeleeInput.reset(); pzvr.input.ControllerBridge.clear(); }
             return rendered;
         } catch(Throwable failure) {
             fail(failure);

@@ -16,10 +16,10 @@ function getText(value) return value end
 function require(_) end
 Keyboard = {KEY_SCROLL=70, KEY_F10=68}
 Events = {}
-for _, name in ipairs({"OnMainMenuEnter", "OnGameStart", "OnTickEvenPaused"}) do
+for _, name in ipairs({"OnMainMenuEnter", "OnGameStart", "OnTickEvenPaused", "OnGamepadDisconnect"}) do
     local event = {handlers={}}
     event.Add = function(fn) table.insert(event.handlers, fn) end
-    event.fire = function() for _, fn in ipairs(event.handlers) do fn() end end
+    event.fire = function(...) for _, fn in ipairs(event.handlers) do fn(...) end end
     Events[name] = event
 end
 local core = {isDoingTextEntry=function() return typing == true end}
@@ -29,6 +29,9 @@ PZVRStereo = {
     setHotkeys=function(...) applied={...}; syncCount=(syncCount or 0)+1 end,
     blockHotkeys=function(value) blocked=value end,
     setArmReachPercent=function(value) armReach=value end,
+    setAllowMotionMeleeWithGamepad=function(value) hybrid=value end,
+    setControllerMode=function(value) controllerMode=value end,
+    setMeleeMode=function(value) meleeMode=value end,
 }
 luautils = {split=function(str, separator)
     local result={}
@@ -58,6 +61,11 @@ assert(options.name == "PZ3D VR")
 Events.OnMainMenuEnter.fire()
 assert(applied[1]==70 and applied[2]==3 and applied[4]==7 and applied[6]==5 and applied[7]==68)
 assert(armReach==150)
+assert(meleeMode==0)
+assert(controllerMode==0)
+assert(hybrid==false)
+options:getOption("meleeMode"):setValue(5); options:apply(); assert(meleeMode==4)
+options:getOption("meleeMode"):setValue(1); options:apply()
 local count=syncCount
 -- Mimic vanilla's key-picker record, including the distinction between UI and saved key.
 options:getOption("xr").element={keyCode=30}
@@ -70,7 +78,13 @@ options:getOption("capture").element={keyCode=0}
 options:apply()
 assert(applied[7]==0)
 options:getOption("armReachPercent"):setValue(125)
+options:getOption("meleeMode"):setValue(2)
+options:getOption("controllerMode"):setValue(4)
+options:getOption("allowMotionMeleeWithGamepad"):setValue(true)
 options:apply(); assert(armReach==125)
+assert(meleeMode==1)
+assert(controllerMode==3)
+assert(hybrid==true)
 PZAPI.ModOptions:save()
 assert(string.find(saved,"keybind|PZ3DVRTest|xr|30",1,true))
 -- Simulate reloading persisted settings, rather than trusting in-memory values.
@@ -78,12 +92,26 @@ options:getOption("xr"):setValue(70)
 options:getOption("xrModifiers"):setValue(4)
 options:getOption("capture"):setValue(68)
 options:getOption("armReachPercent"):setValue(150)
+options:getOption("meleeMode"):setValue(1)
+options:getOption("controllerMode"):setValue(1)
+options:getOption("allowMotionMeleeWithGamepad"):setValue(false)
 PZAPI.ModOptions:load()
 assert(applied[1]==30 and applied[2]==0 and applied[7]==0)
 assert(armReach==125)
+assert(meleeMode==1)
+assert(controllerMode==3)
+assert(hybrid==true)
 visible=true; Events.OnTickEvenPaused.fire(); assert(blocked==true)
 visible=false; typing=true; Events.OnTickEvenPaused.fire(); assert(blocked==true)
 typing=false; Events.OnTickEvenPaused.fire(); assert(blocked==false)
+-- Synthetic ownership confines disconnect cleanup; no physical controller cleanup.
+local data={player=0,focus={onLoseJoypadFocus=function() lost=true end},disconnectedUI={removeFromUIManager=function() removed=true end}}
+local controller={joypad=data}
+JoypadState={controllers={[15]=controller},players={[1]=data},useKeyboardMouse=function() switched=true; data.player=nil end}
+PZVRStereo.isBridgeController=function(id) return id==15 end
+Events.OnGamepadDisconnect.fire(0); assert(not switched and not removed)
+Events.OnGamepadDisconnect.fire(15); assert(switched and removed and lost)
+assert(controller.joypad==nil and data.controller==nil and data.disconnectedUI==nil)
 -- The options can still load when the Java bridge is unavailable/disabled.
 PZVRStereo=nil; Events.OnGameStart.fire(); Events.OnTickEvenPaused.fire(); options:apply()
 ''')

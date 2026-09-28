@@ -1,5 +1,17 @@
 # Harness validation — 2026-09-27
 
+## Contact-timed baseball bat pilot (0.9.0)
+
+The opt-in contact modes derive a swept capsule from the rendered plain baseball bat's mesh bounds and tracked attachment/world transforms. The simulation thread selects the first eligible standing zombie, starts native combat, and resolves its collision at native attack-state readiness, with a 150 ms contact expiry. Scoped hooks replace only that attack's hit list, suppress its subsequent animation collision and unarmed callbacks, and exclude unrelated scenery hits. Native recovery remains authoritative. Off and animation-timed modes remain available.
+
+The full `Test.ps1` suite passed: 29 contact combat fixture checks, 47 existing melee adapter checks, 92 gesture checks, 982 arm checks, 31 controller lifecycle checks, and the existing capture, mirror, XR lifecycle, mapping, OpenGL, camera, timing and hotkey suites. Eleven copied rendering/controller/combat target classes passed JVM retransformation verification without initialization; 16 melee transformation contract checks passed. Evidence: `build/runs/20260927-211958-176/` and `build/controller-lifecycle.log`.
+
+Contact fixtures exercise diagnostics, selected-target identity, native state readiness, duplicate collision suppression, scenery isolation, misses, prone/fake-dead exclusion, window/solid obstruction, target movement, contact expiry, trigger release, tracking/equipment changes, native cooldown, UI, multiplayer exclusion, stationary overlap, body translation, and earliest-target selection. They use original synthetic game fixtures, including an instrumented synthetic CombatManager; they do not execute the actual game's combat implementation.
+
+The final geometry suite passed 20 checks (`contact-geometry-final.log`): segment/sweep geometry, discontinuities, size limits, queue overflow, scene origins, row-major attachment conversion through the render capture path, local-player selection and ambiguous attachment rejection. Standalone Lua settings tests passed with native ModOptions and mocked services, including the contact mode Apply mapping and persistence regressions.
+
+No game launch or installation was performed. Actual mesh fit, damage/recovery behavior, animation coexistence, headset thresholds and contact feel remain unverified. Zombie capsules are approximate; targets moving during sampling are not swept. Translation compensation does not establish immunity to camera rotation or recenter discontinuities. Misses do not incur native missed-swing costs. This is a single-player, plain-bat, standing-zombie pilot, with no positional headshots, scenery damage, multi-hit or multiplayer support.
+
 ## Bounded controller reach extension (0.6.5)
 
 The arm solver now extends upper-arm and forearm lengths proportionally only when a tracked target exceeds native reach. Extension is capped by a persisted Mods setting (100–175%, default 150%). Segment palette transforms stretch along the bone direction so mesh endpoints follow the new joints; wrist/finger transforms, palm offset, and item scale stay independent. This is automatic bounded extension with a manual limit, not anatomical arm-length measurement. Gameplay attack range is unchanged.
@@ -231,3 +243,38 @@ Validation:
 - Adapter suite: 63 checks passed, including the actual transformed upload path in original fixtures, identical attachment matrices for both eyes, and normal/second-eye-failure cleanup. Evidence: ../pz3d-adapter/build/test-results.txt.
 
 The OpenXR backend/action code is unchanged from the previously tested build; no additional native runtime run was needed. The user must test the new palm fit and held-item appearance in-game. Two-handed weapons still follow their native owning hand; no support-hand constraint, motion combat, changed projectiles, flashlight direction, or other world interaction is implemented. PZ3D's existing attachment capture and scoped visibility rules remain. Shadows retain the native pose. No game was launched, no installed files changed, and no 0.6.0 release was published.
+
+## Version 0.7.0 motion-triggered armed melee prototype
+
+Off by default, with Diagnostics and Live modes in Mods settings. A released-then-held right trigger and deliberate translational controller swing produce one short-lived request. The simulation-thread adapter calls native AttemptAttack directly, reads PZ3D's pending/active native request fields to avoid conflicting input, and retains native combat processing. VR-owned attack selection and animation callbacks reject unarmed/floor fallbacks. Tracking, focus, menus, equipment, readiness, and request freshness gate attacks; collision events are logged separately from damage success. Physical weapon contact and motion-scaled damage are not implemented.
+
+Workspace validation on 2026-09-27:
+
+- Full harness regression run passed: 23 capture, 19 mirror, 28 XR lifecycle, 25 real OpenGL capture, 47 camera, 13 timing, 21 hotkey, 11 countdown, and 982 arm checks. Gesture/mailbox tests passed 92 checks. Evidence: `build/runs/20260927-192600-501/`.
+- Final native-adapter fixture run passed 47 checks, including stale input, duplicate collision events, native request conflicts, equipment changes, diagnostic mode, and shove/floor rejection. Fixtures exercise production adapter logic with original synthetic game facades; they do not execute actual combat. Evidence: `melee-runtime-final.log` in that run.
+- Four render classes and four additional melee classes from the pinned copied binaries retransform and verify without initialization. Final evidence: `real-binary-final.log`. Sixteen additional transformation checks cover original class shapes, duplicate-hook rejection, missing-method rejection, and composition with inserted NOP instructions. This checks additive transformation mechanics, not live coexistence with every PZ3D/ZombieBuddy patch. Evidence: `melee-transform.log`.
+- Lua 5.1 settings tests passed against the installed ModOptions implementation with in-memory game I/O, including melee defaults, Apply, and persistence. No real settings were written.
+- Real packaged OpenXR backend passed 1,251 checks across two sessions against isolated simulated SteamVR. Controller action creation, attachment, and synchronization succeeded with no controllers present. Evidence: `build/xr-runs/20260927-192653-094-xr/`. No physical trigger gestures were tested.
+
+No game or installed mod entry point was launched, and no installed mod files were changed. Actual attack start/damage, native patch coexistence, controller bindings on physical devices, gesture thresholds, and attack feel remain unverified in-game. Local package: `dist/PZ3DVRTest-0.7.0.zip`; this validation does not constitute a published release.
+
+## Version 0.8.0 internal OpenXR gamepad bridge
+
+Opt-in standard Touch actions feed an immutable normalized input record, a separate conventional gamepad mapper, and a native controller polling adapter. Three version-gated classes are retransformed without schema changes. The controller constructor gets a synthetic branch restricted to bridge-owned creation; a registry overlay reserves slot 15 and preserves the physical registry. Existing ControllerStateCache and Input handle publication and edges. Player assignment/activation stays native. Off/focus loss/session stop publish neutral state while retaining identity. Physical collision drains neutral input, delivers native disconnect, performs scoped assignment cleanup and returns the slot. Gamepad mode excludes motion-melee input.
+
+Validation on 2026-09-27:
+
+- Full harness regression suite passed, including existing stereo, XR lifecycle, OpenGL, camera, timing, hotkey, countdown, 982 arm and 92 melee detector checks. Evidence: `build/runs/20260927-202938-629/`.
+- Four render, four melee, and three new controller classes from copied pinned binaries retransform with JVM verification, without class initialization or game execution. Evidence: `real-binary.log` in that run.
+- 34 pure mapper checks passed: button/axis/trigger conventions, grip hysteresis, menu/D-pad/Back layer, one Start pulse, invalid/nonfinite/stale input, focus loss and neutral rearming. Evidence: `gamepad-mapping.log`.
+- Final controller fixtures passed 23 checks using production instrumentation/bridge against original synthetic game classes, including a poll/publish/consume double buffer model and native-style button edges. Covers synthetic metadata, physical construction/polling preservation, duplicate-edge prevention, neutral release, resume, retained identity while Off, physical hotplug handback, assignment cleanup, shared-trigger exclusion, and a detach race that must keep the last virtual polling buffer neutral. Evidence: `build/controller-lifecycle.log`. This is not execution of actual game input code.
+- Lua 5.1 checks passed using native ModOptions.lua and mocked I/O, including mode persistence and synthetic-only disconnect UI cleanup. No user settings were written.
+- Real packaged backend passed 1,251 checks across two isolated simulated SteamVR session lifetimes with the expanded action set. Action creation, Touch binding suggestions, attachment and state queries produced no input errors; there were no physical controllers. Evidence: `build/xr-runs/20260927-203126-296-xr/`. The later change was confined to synthetic buffer handback/diagnostic metadata and did not change OpenXR actions.
+
+No game or existing mod entrypoint was launched, no drivers were installed, and no installed files were changed. Actual Quest/Steam Link profile availability, menu delivery, native controller UI activation, gameplay/menu behavior, game-thread scheduling, and hotplug coexistence require user testing. Simulated runtime and fixture checks do not prove those behaviors. Local package: `dist/PZ3DVRTest-0.8.0.zip`; not published to GitHub.
+
+## Version 0.8.1 optional hybrid gamepad / motion melee
+
+Adds `Allow motion melee with gamepad input` in Mods settings, unchecked by default for existing behavior. The requested melee mode is retained independently of gamepad mode. With hybrid enabled and melee set to Diagnostics or Live, motion melee receives the right trigger and the emulated native RT axis stays at -1. Other gamepad controls remain available. Melee Off restores native RT even with hybrid checked. This is global trigger ownership, including menus and firearms; automatic weapon-specific switching is not implemented. Changing RT ownership invalidates the gamepad mapper and requires neutral controls before rearming. Settings changes clear pending melee requests/permits.
+
+The targeted production bridge/fixture suite passed 31 checks, including eight hybrid-control regressions for retained movement/buttons, native RT exclusion, chosen-mode retention, safe routing changes, diagnostic mode and RT restoration. Lua tests passed checkbox defaults, Apply and save/load persistence with mocked I/O. Build and package validation passed. OpenXR acquisition and bytecode hooks are unchanged from 0.8.0; no additional native smoke test was needed. No game launched or installed files modified. Physical hybrid-control behavior remains for the user to test. Local package: `dist/PZ3DVRTest-0.8.1.zip`.

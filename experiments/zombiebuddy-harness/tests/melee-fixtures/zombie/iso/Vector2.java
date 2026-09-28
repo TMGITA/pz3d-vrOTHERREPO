@@ -1,0 +1,1 @@
+package zombie.iso;public class Vector2 {public float x=1,y;}

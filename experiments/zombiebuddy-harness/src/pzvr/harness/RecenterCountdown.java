@@ -11,6 +11,7 @@ public final class RecenterCountdown {
     }
     public void cancel() { pending=false; message=""; noticeUntil=0; }
     public String message() { return message; }
+    public boolean pending() { return pending; }
     public boolean update(long now,boolean ready) {
         if(!pending) {
             if(now>=noticeUntil) message="";

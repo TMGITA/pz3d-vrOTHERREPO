@@ -26,6 +26,10 @@ public final class OpenXrSession implements AutoCloseable {
     private HandPoses handPoses=HandPoses.NONE;
     public HandPoses hands() { return handPoses; }
     public boolean focused() { return focused; }
+    public boolean combatHeld() { return hands!=null && hands.combatHeld(); }
+    private boolean combatTracking;
+    public boolean combatTracking() { return combatTracking; }
+    public long handPoseTime() { return hands==null?0:hands.poseTime(); }
     private long recenterTime=Long.MAX_VALUE;
     private boolean recenter;
     private int fbo,uiReadFbo;
@@ -203,7 +207,7 @@ public final class OpenXrSession implements AutoCloseable {
         current(); if(closed) throw new IllegalStateException("Session closed");
         timing.begin(System.nanoTime());
         boolean success=false,rendered=false;
-        uiCopied=false; handPoses=HandPoses.NONE;
+        uiCopied=false; handPoses=HandPoses.NONE; combatTracking=false;
         try(MemoryStack s=stackPush()) {
             events(s); if(ended) throw new IllegalStateException("Runtime session stopped or lost");
             if(!running) { success=true; return false; }
@@ -232,6 +236,8 @@ public final class OpenXrSession implements AutoCloseable {
                     timing.add(FrameTiming.Stage.LOCATE,System.nanoTime()-stamp);
                     long required=XR_VIEW_STATE_ORIENTATION_VALID_BIT|XR_VIEW_STATE_POSITION_VALID_BIT;
                     long headRequired=XR_SPACE_LOCATION_ORIENTATION_VALID_BIT|XR_SPACE_LOCATION_POSITION_VALID_BIT;
+                    long headTracked=XR_SPACE_LOCATION_ORIENTATION_TRACKED_BIT|XR_SPACE_LOCATION_POSITION_TRACKED_BIT;
+                    combatTracking=(location.locationFlags()&(headRequired|headTracked))==(headRequired|headTracked);
                     if(count.get(0)==2 && (validity.viewStateFlags()&required)==required && (location.locationFlags()&headRequired)==headRequired) {
                         if(state.predictedDisplayTime()>=recenterTime) { recenter=true; recenterTime=Long.MAX_VALUE; }
                         List<XrCamera.View> samples=new ArrayList<>();

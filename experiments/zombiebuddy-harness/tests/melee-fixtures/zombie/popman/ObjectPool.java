@@ -1,0 +1,1 @@
+package zombie.popman;public class ObjectPool<T>{private final java.util.function.Supplier<T> factory;public ObjectPool(java.util.function.Supplier<T> factory){this.factory=factory;}public T alloc(){return factory.get();}}

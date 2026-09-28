@@ -103,3 +103,17 @@ The decisive experiment is whether gesture-to-native-impact delay and facing res
 | Compatibility | Copied-class transformation without initialization first; user-run single-player headset tests next. Multiplayer requires separate validation and is not established by reusing native calls. |
 
 No runtime code was changed as part of this investigation. The next deliverable should be an opt-in diagnostic melee prototype with a clear record of accepted/rejected gestures and native attack timing.
+
+## Implemented prototype follow-up: 0.7.0
+
+The first prototype is implemented in `experiments/zombiebuddy-harness/src/pzvr/melee/`. See the harness README for settings and test instructions, and VALIDATION.md for evidence and remaining hardware/in-game checks.
+
+A right-trigger-gated translational swing requests an immediate native `AttemptAttack(0)` on the simulation thread. It bypasses PZ3D's delayed request queue, while reading the pinned NativeAvatar pending/active fields to reject conflicting native requests. Trigger-held aim participates in the existing native aiming path. Scoped guards reject shove, grapple, and floor fallbacks only for VR-owned attacks, including later attack-variable recalculation and animation collision callbacks. Ordinary one-handed, two-handed, and heavy swing weapon families are supported; native character-facing targeting and animation collision timing remain authoritative. Default mode is Off, with Diagnostics and Live options. No physical contact damage, support-hand constraint, or motion-selected attack direction is implemented.
+
+## Contact-timed pilot follow-up: 0.9.0
+
+The user chose to proceed directly to contact timing. `pzvr/contact` now captures the rendered plain baseball bat's attachment transform and mesh bounds as an approximate world-space capsule. A bounded render-to-simulation mailbox carries geometry without accessing the live world on the render thread. The simulation thread sweeps against approximate standing-zombie capsules, checks reach and conservative obstructions, and selects the earliest eligible contact per right-trigger hold.
+
+For this owned attack, `CombatManager.calculateHitInfoList` supplies only the contacted zombie. Resolution calls native `attackCollisionCheck` after `SwipeStatePlayer.enter`, or on a subsequent simulation update if needed, instead of waiting for the animation event. A processed flag and scoped animation callback guard prevent duplicate collision. The native `processTreeHit` path is skipped and its cached object/tree references cleared so character-facing scenery cannot receive an unrelated hit. Native recovery and damage processing remain in place. Pending contacts expire after 150 ms and reject target movement beyond 25 cm; no attack is buffered through recovery.
+
+The pilot is deliberately limited to `Base.BaseballBat`, standing zombies and single-player. It does not implement exact mesh/per-bone hitboxes, headshot bonuses, scenery damage, multi-hit or network behavior. Misses currently initiate no native attack and incur no missed-swing cost. Diagnostics and live contact modes are separate from the existing animation-timed mode. Fixture and copied-bytecode tests passed; actual headset contact fit and native combat outcomes require user testing. See harness README and VALIDATION.md for the precise test protocol and evidence.

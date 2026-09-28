@@ -1,0 +1,1 @@
+package zombie.ai.states; public class SwipeStatePlayer extends zombie.ai.State {private static final SwipeStatePlayer INSTANCE=new SwipeStatePlayer();public static final Param<Boolean> ATTACKED=new Param<>();public static SwipeStatePlayer instance(){return INSTANCE;}}

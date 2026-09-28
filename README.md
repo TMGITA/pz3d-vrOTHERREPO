@@ -1,8 +1,8 @@
 # PZ3D VR prototype
 
-Experimental OpenXR support for Project Zomboid through PZ3D and ZombieBuddy. Current source prototype: **0.6.5**, Windows x64.
+Experimental OpenXR support for Project Zomboid through PZ3D and ZombieBuddy. Current source prototype: **0.9.0**, Windows x64.
 
-Features include live stereo rendering, OpenXR head-pose camera mapping, desktop stereo preview, a vanilla UI panel in VR, frame-timing diagnostics, and controller-driven arm IK. Version 0.6.5 adds remappable shortcuts, a recenter countdown, calibration retention through tracking interruptions, shoulder-height adjustment for physical kneeling, and bounded arm-reach extension. The user reports successful physical controller tracking in the preceding prototype; the latest tracking fixes, shoulder adjustment, reach fitting, and countdown display still need physical-headset confirmation. Controller buttons, locomotion, combat and interactions remain game-controlled. Hardware comfort, latency and world scale still need validation.
+Features include live stereo rendering, OpenXR head-pose camera mapping, desktop stereo preview, a vanilla UI panel in VR, frame-timing diagnostics, and controller-driven arm IK. Version 0.6.5 adds remappable shortcuts, a recenter countdown, calibration retention through tracking interruptions, shoulder-height adjustment for physical kneeling, and bounded arm-reach extension. The user reports successful physical controller tracking in the preceding prototype; the latest tracking fixes, shoulder adjustment, reach fitting, and countdown display still need physical-headset confirmation. Version 0.7.0 adds an opt-in right-trigger motion-melee prototype; locomotion and other interactions remain game-controlled. Native combat rules and animation-timed hits are retained. Version 0.8.0 adds an opt-in OpenXR Touch-to-native-gamepad bridge with input diagnostics; actual gamepad activation and controls need in-game validation. Version 0.9.0 adds an opt-in contact-timed pilot for the plain baseball bat against standing zombies; native attack-state readiness and recovery remain, with physical/in-game validation pending. Hardware comfort, latency and world scale still need validation.
 
 ## Requirements
 
@@ -16,7 +16,7 @@ Obtain these separately. This repository contains the prototype source and synth
 
 ## Using the prototype
 
-See the [mod instructions](experiments/zombiebuddy-harness/README.md) for installation, runtime setup, controls, and limitations. Download the [v0.6.5 prerelease](https://github.com/kilroy94/pz3d-vr/releases/tag/v0.6.5), or build it using the steps below.
+See the [mod instructions](experiments/zombiebuddy-harness/README.md) for installation, runtime setup, controls, and limitations. Download the [v0.9.0 prerelease](https://github.com/kilroy94/pz3d-vr/releases/tag/v0.9.0), or build it using the steps below.
 
 Shortcuts are remappable in **Options > Mods > PZ3D VR**. Select a keyboard key and modifiers, then press **Apply**. The defaults are:
 
@@ -51,7 +51,7 @@ Then build and run the local suite:
 powershell -NoProfile -ExecutionPolicy Bypass -File experiments/zombiebuddy-harness/Test.ps1
 ```
 
-This produces `experiments/zombiebuddy-harness/dist/PZ3DVRTest-0.6.5.zip`. The suite uses synthetic fixtures, copied-class inspection/retransformation without initialization, and standalone OpenGL checks. It does not install the mod or launch the game. Native OpenXR smoke tests are separate; see the harness instructions. Do not run a competing test scene while the game is using XR.
+This produces `experiments/zombiebuddy-harness/dist/PZ3DVRTest-0.9.0.zip`. The suite uses synthetic fixtures, copied-class inspection/retransformation without initialization, and standalone OpenGL checks. It does not install the mod or launch the game. Native OpenXR smoke tests are separate; see the harness instructions. Do not run a competing test scene while the game is using XR.
 
 ## Project layout
 

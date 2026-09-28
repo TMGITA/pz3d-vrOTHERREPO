@@ -1,0 +1,1 @@
+package zombie.characters; public class IsoZombie extends IsoGameCharacter {public boolean fake,reanimated;public boolean isDead(){return dead;}public boolean isFakeDead(){return fake;}public boolean isReanimatedForGrappleOnly(){return reanimated;}}

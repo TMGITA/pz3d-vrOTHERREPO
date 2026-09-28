@@ -6,12 +6,18 @@ import org.lwjgl.openxr.*;
 import org.lwjgl.system.MemoryStack;
 import static org.lwjgl.openxr.XR10.*;
 
-/** Grip-pose actions only: no buttons, locomotion, or gamepad emulation. Owner render thread. */
+/** Grip poses and an explicit right-trigger melee gate. Owner render thread. */
 public final class XrHands implements AutoCloseable {
     private final XrInstance instance;
     private final XrSession session;
     private XrActionSet set;
     private XrAction grip;
+    private XrAction combat;
+    private XrControllerInput input;
+    private boolean combatHeld;
+    private long poseTime;
+    public boolean combatHeld() { return combatHeld; }
+    public long poseTime() { return poseTime; }
     private final XrSpace[] spaces=new XrSpace[2];
     private final long[] paths=new long[2];
     private int lastMask=-1;
@@ -27,9 +33,17 @@ public final class XrHands implements AutoCloseable {
                 .localizedActionName(s.UTF8("Hand grip pose")).actionType(XR_ACTION_TYPE_POSE_INPUT)
                 .subactionPaths(s.longs(paths)),p),"create grip action");
             grip=new XrAction(p.get(0),set);
+            check(xrCreateAction(set,XrActionCreateInfo.calloc(s).type$Default().actionName(s.UTF8("melee_enable"))
+                .localizedActionName(s.UTF8("Hold to enable melee swing")).actionType(XR_ACTION_TYPE_FLOAT_INPUT)
+                .subactionPaths(s.longs(paths[1])),p),"create melee enable action");
+            combat=new XrAction(p.get(0),set);
+            try { input=new XrControllerInput(instance,session,set,paths,s); }
+            catch(RuntimeException ex) { OpenXrSession.log("Gamepad actions unavailable: "+ex); }
             for(String profile:new String[]{"khr/simple_controller","oculus/touch_controller","valve/index_controller","htc/vive_controller","microsoft/motion_controller"}) {
-                XrActionSuggestedBinding.Buffer bindings=XrActionSuggestedBinding.calloc(2,s);
+                XrActionSuggestedBinding.Buffer bindings=XrActionSuggestedBinding.calloc(3+(input==null?0:input.bindingCount(profile)),s);
                 for(int i=0;i<2;i++) bindings.get(i).action(grip).binding(path("/user/hand/"+(i==0?"left":"right")+"/input/grip/pose",s));
+                bindings.get(2).action(combat).binding(path("/user/hand/right/input/"+(profile.equals("khr/simple_controller")?"select/click":"trigger/value"),s));
+                if(input!=null) input.bindings(bindings,3,profile,s);
                 int result=xrSuggestInteractionProfileBindings(instance,XrInteractionProfileSuggestedBinding.calloc(s).type$Default()
                     .interactionProfile(path("/interaction_profiles/"+profile,s)).suggestedBindings(bindings));
                 if(result==XR_ERROR_PATH_UNSUPPORTED) OpenXrSession.log("Grip profile unsupported: "+profile);
@@ -44,12 +58,19 @@ public final class XrHands implements AutoCloseable {
         } catch(Throwable failure) { close(); throw failure; }
     }
     public HandPoses locate(XrSpace base,long time,boolean focused,MemoryStack s) {
+        combatHeld=false; poseTime=time;
+        pzvr.input.ControllerBridge.clear();
         XrCamera.Pose[] poses=new XrCamera.Pose[2];
         if(focused) {
             XrActiveActionSet.Buffer active=XrActiveActionSet.calloc(1,s); active.get(0).actionSet(set).subactionPath(XR_NULL_PATH);
             int result=xrSyncActions(session,XrActionsSyncInfo.calloc(s).type$Default().activeActionSets(active));
             if(result!=XR_SESSION_NOT_FOCUSED) {
                 check(result,"sync grip poses");
+                if(input!=null) try { input.sample(true,s); }
+                catch(RuntimeException ex) { OpenXrSession.log("Gamepad acquisition disabled: "+ex); input.close(); input=null; }
+                XrActionStateFloat trigger=XrActionStateFloat.calloc(s).type$Default();
+                check(xrGetActionStateFloat(session,XrActionStateGetInfo.calloc(s).type$Default().action(combat).subactionPath(paths[1]),trigger),"melee enable state");
+                combatHeld=trigger.isActive() && trigger.currentState()>=.65f;
                 for(int i=0;i<2;i++) {
                     XrActionStatePose state=XrActionStatePose.calloc(s).type$Default();
                     check(xrGetActionStatePose(session,XrActionStateGetInfo.calloc(s).type$Default().action(grip).subactionPath(paths[i]),state),"grip activity");
@@ -74,7 +95,9 @@ public final class XrHands implements AutoCloseable {
     }
     @Override public void close() {
         for(int i=0;i<2;i++) if(spaces[i]!=null) { xrDestroySpace(spaces[i]); spaces[i]=null; }
+        if(input!=null) { input.close(); input=null; }
         if(grip!=null) { xrDestroyAction(grip); grip=null; }
+        if(combat!=null) { xrDestroyAction(combat); combat=null; }
         if(set!=null) { xrDestroyActionSet(set); set=null; }
     }
 }

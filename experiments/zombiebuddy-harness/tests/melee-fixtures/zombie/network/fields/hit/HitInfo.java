@@ -1,0 +1,1 @@
+package zombie.network.fields.hit;public class HitInfo {public int chance;private zombie.iso.IsoMovingObject target;public HitInfo init(zombie.iso.IsoMovingObject target,float dot,float dist,float x,float y,float z){this.target=target;return this;}public zombie.iso.IsoMovingObject getObject(){return target;}}

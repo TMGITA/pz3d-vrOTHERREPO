@@ -1,0 +1,1 @@
+package zombie.iso;public class IsoCell {public final java.util.Set<IsoMovingObject> objects=new java.util.LinkedHashSet<>();public java.util.Set<IsoMovingObject> getObjectList(){return objects;}}

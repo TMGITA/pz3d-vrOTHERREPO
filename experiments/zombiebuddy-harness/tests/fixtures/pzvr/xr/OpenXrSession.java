@@ -15,6 +15,9 @@ public final class OpenXrSession implements AutoCloseable {
     public FrameTiming timing() { return timing; }
     public HandPoses hands() { return HandPoses.NONE; }
     public boolean focused() { return true; }
+    public boolean combatHeld() { return false; }
+    public boolean combatTracking() { return false; }
+    public long handPoseTime() { return System.nanoTime(); }
     public OpenXrSession() { if(failCreate) throw new IllegalStateException("Injected unavailable runtime"); opened++; }
     public boolean consumeRecenter() { return false; }
     public static void log(String message) { System.out.println("[XR fixture] "+message); }

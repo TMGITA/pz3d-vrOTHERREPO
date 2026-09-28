@@ -6,6 +6,75 @@ Supported binaries are exactly Project Zomboid **42.20.4**, PZ3D **0.2.2**, and 
 
 Version **0.1.1** fixes the original F8 conflict: F8 opens PZ3D's camera panel and its Lua event can be filtered. Capture now polls **Ctrl+Shift+F10** directly on the render thread, once per press, while the game window is focused. Close the game before replacing the local `PZ3DVRTest` folder with this package; restart and approve the changed JAR if ZombieBuddy prompts. Release the chord before another capture.
 
+## Contact-timed baseball bat pilot (0.9.0)
+
+This opt-in pilot detects the **rendered bat's swept contact**, selects that zombie, and resolves through native combat as soon as the native attack state is ready. It does not wait for the animation impact event. The old animation-timed mode remains available.
+
+In **Options > Mods > PZ3D VR > Motion melee prototype**, choose **Bat contact diagnostics (no attacks)** first, then **Bat contact-timed attacks** for gameplay. Equip the plain **Base.BaseballBat** (not nailed, metal, crafted or broken variants), start XR, release the right trigger, then hold it and swing into a **standing zombie**. Keep holding through resolution; release between attempts. Enable **Allow motion melee with gamepad input** for gamepad movement alongside contact attacks; RT is then reserved for this mode. Synthetic arms cannot initiate contact attacks.
+
+`console.txt` contains `[PZ3D VR Contact]` entries for geometry acquisition, diagnostic contacts, accepted contacts, native resolution delay and completion. Diagnostics applies no damage. A `resolved` entry records a native collision call/hit-list count, not proof of actual damage. No new shortcut is required.
+
+Geometry and scope:
+
+- The bat capsule is derived from its mesh bounds and the same attachment/world matrices used for tracked held-item rendering, including scale, IK reach clamping and scene-origin offsets. It is not an exact mesh collider.
+- Standing zombies use an approximate upright body capsule, not animated per-limb/head hitboxes. No positional headshot bonus is added.
+- Sweeps subdivide endpoint motion at up to 2 cm intervals with a 1 cm tolerance; they approximate the path between samples. Fast/discontinuous tracking, stale samples, nonfinite geometry, queue overflow, missing geometry, focus/UI loss and equipment changes fail closed. Motion must exceed initial speed/travel thresholds in world space and relative to head translation, preventing stationary overlap and whole-body movement alone from attacking. These thresholds need headset tuning.
+- Only the first valid zombie contact is considered per trigger hold, subject to a bounded reach guard, same-floor restriction, native readiness/recovery, and conservative line/solid-obstruction checks. Windows/closed doors block this pilot. No shoves, stomps, unarmed, stabbing weapons, scenery destruction, multiplayer or multi-hit sweeps.
+- The contacted target replaces the native facing-based hit list only for this owned attack. Native damage/endurance/condition processing and recovery run; the later animation collision is suppressed, and unrelated native scenery-hit processing is excluded. Other players/ordinary attacks keep their original path.
+- Contact is resolved on the simulation thread at native attack-state readiness. Pending contacts expire after **150 ms**, and are cancelled if the target moves more than 25 cm before resolution. This is contact-driven timing, not a promise of zero latency or of immediate damage during any animation state. The native animation still controls recovery.
+- A miss does not initiate a native attack in this first pilot, so it does not incur the ordinary native missed-swing cost. No damage scaling from physical swing speed is added.
+
+Geometry tests, synthetic native-combat fixtures and copied-class verification cannot prove in-game attachment fit, animation-hook coexistence or impact feel. Those require the user's headset test; the game was not launched during development. Installation and dependencies remain unchanged.
+
+
+## Touch controllers as a conventional gamepad (0.8.0)
+
+This opt-in bridge combines both Quest Touch controllers into **PZ VR Gamepad**, using native Zomboid controller bindings. No Windows virtual-controller driver is required. Standard OpenXR Touch bindings are used; the actual Quest/Steam Link profile and input delivery still need the user's hardware test.
+
+1. Install the updated folder with the game closed. Start a disposable single-player game using the existing dependencies and start OpenXR.
+2. In **Options > Mods > PZ3D VR > VR controllers as gamepad**, select **Input diagnostics only**, Apply, and check `[PZ3D VR Input]` and `Input profile` in `console.txt`. Both hands should report active; stick, trigger, squeeze and button values should change.
+3. Select **Gamepad with diagnostics** for the first live test. Return both sticks/triggers/grips/buttons to neutral. In Zomboid's native controller settings, enable **PZ VR Gamepad**, then use native controller activation/assignment to control the existing player. The bridge does not automatically assign a player. Desktop input is needed for initial setup.
+4. After verifying input, select **Gamepad** to disable periodic diagnostics. **Off** neutralizes the already registered device; its identity remains until game restart so dashboard/session interruptions do not repeatedly disconnect the player. Use Zomboid's normal return-to-keyboard controls when switching away from gamepad play.
+
+| Touch control | Native gamepad input |
+|---|---|
+| Left/right thumbsticks | Left/right sticks; right stick retains native aiming, not camera turning |
+| A/B/X/Y | A/B/X/Y |
+| Left/right trigger | LT/RT |
+| Left/right grip pressure | LB/RB, with press/release hysteresis |
+| Left/right stick click | L3/R3 |
+| Tap left Menu | Start, on release |
+| Hold left Menu + left stick | D-pad; consumes left-stick movement while held |
+| Hold left Menu + X | Back; consumes X while held |
+| Right system button | Runtime-owned; no gamepad binding |
+
+Menu can be reserved by the runtime; the alternate layer is unavailable if SteamVR does not deliver it. Neither Guide nor runtime system access is overridden. No independent snap/smooth turning is added. Existing native UI input routing remains; entering game menus does not disable the emulated controller.
+
+**Allow motion melee with gamepad input** (default unchecked) enables hybrid controls: movement and buttons remain native, while the selected motion-melee mode receives the right trigger exclusively. Native RT stays released whenever motion melee is set to Diagnostics or Live, including for firearms and menus. Set Motion melee to Off to restore RT. With the checkbox unchecked, gamepad mode suppresses motion melee as before. Return controls to neutral after changing ownership. Turning gamepad mode Off restores the selected melee setting. Tracking/pose rendering remains separate from button acquisition. Stale input (250 ms), loss of focus/action availability, XR stop, and mode disable neutralize all inputs; resume requires neutral controls. Very short taps between native input samples may be missed.
+
+The initial adapter reserves native controller slot **15** (the sixteenth slot). If a physical controller already occupies it, the bridge refuses registration. If one arrives later, the virtual pad drains neutral input, disconnects through native events, releases its assignment, and hands the slot back. Other physical controllers keep their native path. This conservative fixed-slot policy avoids dynamic reassignment; multiplayer/local co-op and physical hotplug coexistence still need in-game validation.
+
+Diagnostics only creates no virtual device if one was not already registered. XR snapshots are capped at two per second; game-thread state logs at one per two seconds, with source sequence IDs. Normal Gamepad mode logs registration/profile/lifecycle changes only. Missing action support disables acquisition without intentionally changing stereo or arm tracking. No new release has been published by this build.
+
+
+## Motion-triggered armed melee (0.7.0)
+
+Off by default. In **Options > Mods > PZ3D VR > Motion melee prototype**, choose **Diagnostics only (no attacks)** first and Apply. Equip an ordinary swing weapon in the primary hand. Release the right trigger, then hold it and make a deliberate translational swing with the right controller. Release the trigger between attempts. Diagnostics logs eligible gestures without initiating attacks. After reviewing those logs, choose **Live armed melee** to request native attacks.
+
+Keep the trigger held until the native attack finishes. Releasing it, losing tracking/focus, opening menus, changing equipment, or switching modes can suppress an attack that has not reached its collision event yet. Recenter and synthetic preview invalidate gesture input. Native keyboard/gamepad controls continue to work. No new keyboard shortcut is required. The right trigger is suggested for Touch, Index, Vive, and Windows MR profiles; simple-controller profiles use Select. Controller bindings can also be configured through the runtime where supported.
+
+This first prototype supports ordinary one-handed, two-handed, and heavy swing weapons. Two-handed inventory equipment continues to use vanilla rules. It excludes unarmed attacks, firearms, throwing weapons, knives, spears, chainsaws, and floor attacks. It does not implement off-hand attacks, motion-selected attack animations, physical blade collision, or motion-based damage scaling. Aim using the existing character-facing controls; the headset and controller do not independently steer native attack direction.
+
+Gestures request one native attack immediately on the simulation thread rather than entering PZ3D's delayed attack queue. Damage remains tied to the native animation collision event. Shove/grapple/floor fallbacks are rejected or have their collision suppressed for VR-owned attacks. Existing native weapon condition, endurance, cooldown, target filtering, and damage processing remain authoritative. Runtime errors disable the melee adapter without disabling stereo rendering.
+
+Initial detector thresholds: at least 0.12 m of continuous motion, speed at least 1.2 m/s both in physical tracking space and relative to head translation; gaps over 120 ms and large tracking jumps reset detection. Requests/heartbeats expire after 150 ms. These are engineering defaults, not hardware-tuned gestures. Wrist-only rotation does not trigger this translational prototype. Whole-body translation and head motion alone are excluded. Synthetic hand preview never initiates combat.
+
+Find **[PZ3D VR Melee]** lines in the game's `console.txt`. Correlated IDs distinguish `gesture`, `diagnostic`, `request`, `started`, `collision_event`, `collision_suppressed`, `rejected`, and `finished`. The collision event is not proof of a damaging hit. Compare gesture-to-start and gesture-to-collision delays during your first hardware test. No attacks should occur while changing settings or immediately after tracking returns with the trigger already held.
+
+Physical-headset attack feel, thresholds, native animation timing, and actual in-game hook coexistence need user validation. Use a disposable single-player save. Dependencies and existing settings remain the same.
+
+Implementation details and the earlier source investigation are in [the melee research report](../../research/motion-melee-feasibility.md). OpenXR trigger input uses the standard float action and suggested binding conversions in the [Khronos specification](https://registry.khronos.org/OpenXR/specs/1.0-khr/html/xrspec.html#input-suggested-bindings).
+
 ## Controller reach fitting (0.6.5)
 
 Tracked arms can now extend beyond the avatar's native reach to meet controller targets. Extension happens only when needed, maintaining the native upper-arm/forearm proportions. The arm mesh stretches along the segments rather than merely moving the wrist; hand size, palm offsets, and held-item scale remain unchanged. Nearby targets use native segment lengths again.
@@ -54,7 +123,7 @@ Held items remain visible and follow their tracked hand. The renderer preserves 
 
 This is still visual tracking: controller buttons, attacking, hit detection, gun aim/projectiles, flashlight illumination direction and world interactions use the existing game behavior. Two-handed items follow their native owning hand; the other hand is not constrained to a second grip. PZ3D's existing capture/visibility rules still apply, including items it omits while scoped. Fingers retain native animation, and shadows prepared before the stereo pair retain native poses.
 
-Install `PZ3DVRTest-0.6.5.zip` with the game closed and approve the updated JAR if prompted. Start the runtime, enter first-person PZ3D on foot in single player, hold controllers comfortably forward, and enable XR with **Ctrl+Shift+Scroll Lock**. Initial valid tracking aligns controller orientation to the native hand orientation; subsequent rotation turns the wrist. **Ctrl+Shift+Alt+Scroll Lock** recalibrates both camera and hand alignment. Controller position needs no button press.
+Install `PZ3DVRTest-0.9.0.zip` with the game closed and approve the updated JAR if prompted. Start the runtime, enter first-person PZ3D on foot in single player, hold controllers comfortably forward, and enable XR with **Ctrl+Shift+Scroll Lock**. Initial valid tracking aligns controller orientation to the native hand orientation; subsequent rotation turns the wrist. **Ctrl+Shift+Alt+Scroll Lock** recalibrates both camera and hand alignment. Controller position needs no button press.
 
 Test empty hands first: rotate each controller in place and check that the palm stays at the grip position. Then equip a one-handed item, a secondary-hand item, and a two-handed weapon. Check item alignment while translating and rotating each hand, after swapping equipment, after recentering, and after losing/reacquiring one controller. Native shadows and simulated attacks are not evidence of tracked interaction.
 
@@ -78,7 +147,7 @@ Install with the game closed and approve the new JAR if prompted. Enable XR with
 
 ## Timing diagnostics (0.3.2)
 
-Replace the local test-mod folder with `PZ3DVRTest-0.6.5.zip` while the game is closed, then approve the new JAR if prompted. Controls are unchanged. Enable XR with **Ctrl+Shift+Scroll Lock**, remain in the same scene for about 20 seconds, then walk/turn for about 30 seconds. Toggle XR off to flush the final partial report. Reports appear automatically in the game's `console.txt` with `[PZ3D XR Timing]`; there is no extra hotkey.
+Replace the local test-mod folder with `PZ3DVRTest-0.9.0.zip` while the game is closed, then approve the new JAR if prompted. Controls are unchanged. Enable XR with **Ctrl+Shift+Scroll Lock**, remain in the same scene for about 20 seconds, then walk/turn for about 30 seconds. Toggle XR off to flush the final partial report. Reports appear automatically in the game's `console.txt` with `[PZ3D XR Timing]`; there is no extra hotkey.
 
 Each five-second window reports successful stereo submissions per elapsed second (`stereoHz`), XR calls, submitted/skipped/failed counts, the runtime's latest predicted display period, and calls whose total wall time exceeds that period (`overBudget`). This is not a compositor dropped-frame count. `stereoHz` measures application submission, not presentation to the display.
 
@@ -142,7 +211,7 @@ The log reports `[PZ3D VR Mirror] ON`, the first completed pair, progress every 
 
 ## Install for your test
 
-1. Close Project Zomboid. Extract `PZ3DVRTest-0.6.5.zip` into your local Zomboid mods directory, normally `%USERPROFILE%\Zomboid\mods`. The resulting descriptor should be `mods\PZ3DVRTest\42.20.4\mod.info`, with a sibling `PZ3DVRTest\common` directory. Do not put it in the Steam game directory or replace either existing mod JAR.
+1. Close Project Zomboid. Extract `PZ3DVRTest-0.9.0.zip` into your local Zomboid mods directory, normally `%USERPROFILE%\Zomboid\mods`. The resulting descriptor should be `mods\PZ3DVRTest\42.20.4\mod.info`, with a sibling `PZ3DVRTest\common` directory. Do not put it in the Steam game directory or replace either existing mod JAR.
 2. Enable **ZombieBuddy**, **PZ3D**, and **PZ3D Stereo Capture Test [Java]**, in that order, for a new disposable single-player test save. Keep other mods disabled for this first test. ZombieBuddy and PZ3D remain the existing installations.
 3. The harness JAR is unsigned local development code. If ZombieBuddy presents its Java-mod approval dialog, review and approve this particular `PZ3DVRTest.jar`. The adjacent package `SHA256.txt` identifies the built JAR. No preload permission or global policy change is required. If your loader policy blocks unsigned code outright, the harness will remain unavailable; the package does not bypass that policy.
 4. Launch the save yourself. Enter PZ3D with **Insert**, use first person, and remain on foot. Look at a nearby object with more distant scenery behind it.
@@ -174,7 +243,7 @@ In this source workspace:
 .\experiments\zombiebuddy-harness\Test.ps1
 ```
 
-The builder produces `dist\PZ3DVRTest-0.6.5.zip`, an unpacked `dist\PZ3DVRTest` folder, and `dist\SHA256.txt`. It uses the portable JDK and copied reference JARs already present. It never installs the mod or launches the game. `Test-XR.ps1 -Mode xr -NullRuntime` exercises the packaged XR backend in isolation after `Test.ps1`; `-Mode missing` checks unavailable-runtime fallback. Test fixtures and transformed proprietary reference classes are excluded from the mod JAR.
+The builder produces `dist\PZ3DVRTest-0.9.0.zip`, an unpacked `dist\PZ3DVRTest` folder, and `dist\SHA256.txt`. It uses the portable JDK and copied reference JARs already present. It never installs the mod or launches the game. `Test-XR.ps1 -Mode xr -NullRuntime` exercises the packaged XR backend in isolation after `Test.ps1`; `-Mode missing` checks unavailable-runtime fallback. Test fixtures and transformed proprietary reference classes are excluded from the mod JAR.
 
 The tests exercise real JVM retransformation with an original synthetic renderer, including all-target activation, mismatch rollback, inactive rendering, one-shot requests, unsupported views, recursive entry protection, success/failure reports, lease cleanup, and capture failure isolation. A separate process defines and retransforms the four actual copied PZ3D classes **without initializing them, constructing a Frame, or invoking any game/mod entry point**. A standalone hidden OpenGL context tests the real capture helper: separate eye copies, image orientation, PNG writing, and texture/framebuffer/pixel-buffer state restoration.
 

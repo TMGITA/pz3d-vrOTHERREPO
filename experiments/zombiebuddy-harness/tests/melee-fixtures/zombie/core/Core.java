@@ -1,0 +1,1 @@
+package zombie.core; public final class Core { public static boolean typing; private static final Core instance=new Core(); public static Core getInstance(){return instance;} public boolean isDoingTextEntry(){return typing;} }

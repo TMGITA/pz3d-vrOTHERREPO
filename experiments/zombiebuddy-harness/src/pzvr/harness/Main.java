@@ -31,6 +31,10 @@ public final class Main {
             Path output=Path.of(zombie.ZomboidFileSystem.instance.getCacheDir(),"PZ3D-VR-Test");
             installation=Installation.install(instrumentation,loader,originals);
             CaptureHarness.configure(verified,installation,output);
+            try { pzvr.melee.MeleeInstallation.install(instrumentation,loader); }
+            catch(Exception meleeFailure) { System.err.println("[PZ3D VR Melee] "+meleeFailure); }
+            try { pzvr.input.ControllerInstallation.install(instrumentation,loader); }
+            catch(Exception inputFailure) { System.err.println("[PZ3D VR Input] "+inputFailure); }
             status="Ready: first person, on foot; configure shortcuts in Options > Mods > PZ3D VR";
         } catch(Throwable error) {
             status="Disabled: "+error; error.printStackTrace();
@@ -45,9 +49,23 @@ public final class Main {
     public static void tickXR() { XrHarness.watchdog(); }
     public static String recenterStatus() { return XrHarness.recenterStatus(); }
     public static void setArmReachPercent(int percent) { TrackedArms.setReachPercent(percent); }
+    private static int requestedMeleeMode;
+    private static boolean allowMotionMeleeWithGamepad;
+    public static void setControllerMode(int mode) { pzvr.input.ControllerBridge.configure(mode); updateInputOwnership(); }
+    public static void setAllowMotionMeleeWithGamepad(boolean allow) { allowMotionMeleeWithGamepad=allow; updateInputOwnership(); }
+    public static boolean isBridgeController(int id) { return pzvr.input.ControllerBridge.owns(id); }
+    public static void setMeleeMode(int mode) { requestedMeleeMode=mode>=0&&mode<=4?mode:0; updateInputOwnership(); }
+    private static void updateInputOwnership() {
+        boolean gamepad=pzvr.input.ControllerBridge.mode==2;
+        int mode=gamepad&&!allowMotionMeleeWithGamepad?0:requestedMeleeMode;
+        pzvr.input.ControllerBridge.reserveRightTrigger(gamepad&&mode!=0);
+        pzvr.melee.MeleeInput.mode=mode;
+        pzvr.melee.MeleeInput.permit=null;
+        pzvr.melee.MeleeInput.pending.set(null);
+    }
     public static void setHotkeys(int xr,int xrMods,int recenter,int recenterMods,int preview,int previewMods,int capture,int captureMods) {
         Hotkeys.configure(xr,xrMods,recenter,recenterMods,preview,previewMods,capture,captureMods);
     }
-    public static void blockHotkeys(boolean blocked) { Hotkeys.block(blocked); }
+    public static void blockHotkeys(boolean blocked) { Hotkeys.block(blocked); pzvr.melee.MeleeInput.uiBlocked=blocked; }
     public static String status() { return installation!=null && installation.ready()?CaptureHarness.status():status; }
 }

@@ -84,6 +84,7 @@ public final class TrackedArms {
                 }
             }
             scope.attachments=AttachmentPoses.open(attachments);
+            pzvr.contact.ContactCapture.capture(frame,attachments,sceneFromLocal,head);
             if(found&&!announced) { OpenXrSession.log("Arm IK active: palm-centered grips, upper arms visible; held attachment overrides="+attachments.size()); announced=true; }
             return scope;
         } catch(Throwable failure) {

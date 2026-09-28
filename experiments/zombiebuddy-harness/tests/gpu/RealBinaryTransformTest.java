@@ -36,5 +36,11 @@ public final class RealBinaryTransformTest {
         Class<?> attachment=instance.getMethod("getAttachmentById",String.class).getReturnType();
         if(attachment.getMethod("getBone").getReturnType()!=String.class) throw new AssertionError("Attachment bone accessor");
         System.out.println("Actual copied binary retransformation passed: 4 classes, including attachment upload; no initialization, rendering, or mod/game entry points.");
+        pzvr.melee.MeleeInstallation.install(InstrumentationAgent.instrumentation,loader);
+        if(!pzvr.melee.MeleeRuntime.installed) throw new AssertionError("Melee hooks unavailable");
+        pzvr.input.ControllerInstallation.install(InstrumentationAgent.instrumentation,loader);
+        if(!pzvr.input.ControllerBridge.installed) throw new AssertionError("Controller hooks unavailable");
+        System.out.println("Controller copied-binary retransformation passed: 3 classes without initialization.");
+        System.out.println("Melee copied-binary retransformation passed: 4 additional classes, without initialization or combat execution.");
     }
 }
