@@ -35,6 +35,8 @@ public final class Main {
             catch(Exception meleeFailure) { System.err.println("[PZ3D VR Melee] "+meleeFailure); }
             try { pzvr.input.ControllerInstallation.install(instrumentation,loader); }
             catch(Exception inputFailure) { System.err.println("[PZ3D VR Input] "+inputFailure); }
+            try { pzvr.turn.TurnInstallation.install(instrumentation,loader); }
+            catch(Exception turnFailure) { System.err.println("[PZ3D VR Turn] "+turnFailure); }
             status="Ready: first person, on foot; configure shortcuts in Options > Mods > PZ3D VR";
         } catch(Throwable error) {
             status="Disabled: "+error; error.printStackTrace();
@@ -48,6 +50,7 @@ public final class Main {
     }
     public static void tickXR() { XrHarness.watchdog(); }
     public static String recenterStatus() { return XrHarness.recenterStatus(); }
+    public static void setTurning(int mode,int snap,int speed,int source,int aim) { pzvr.turn.TurnRuntime.configure(mode,snap,speed,source,aim); }
     public static void setArmReachPercent(int percent) { TrackedArms.setReachPercent(percent); }
     private static int requestedMeleeMode;
     private static boolean allowMotionMeleeWithGamepad;
@@ -66,6 +69,6 @@ public final class Main {
     public static void setHotkeys(int xr,int xrMods,int recenter,int recenterMods,int preview,int previewMods,int capture,int captureMods) {
         Hotkeys.configure(xr,xrMods,recenter,recenterMods,preview,previewMods,capture,captureMods);
     }
-    public static void blockHotkeys(boolean blocked) { Hotkeys.block(blocked); pzvr.melee.MeleeInput.uiBlocked=blocked; }
+    public static void blockHotkeys(boolean blocked) { Hotkeys.block(blocked); pzvr.turn.TurnRuntime.block(blocked); pzvr.melee.MeleeInput.uiBlocked=blocked; }
     public static String status() { return installation!=null && installation.ready()?CaptureHarness.status():status; }
 }

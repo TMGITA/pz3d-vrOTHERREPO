@@ -39,8 +39,23 @@ options:addDescription("Quest Touch: enable OpenXR, return controls to neutral, 
 options:addTickBox("allowMotionMeleeWithGamepad", "Allow motion melee with gamepad input", false)
 options:addDescription("When checked, gamepad movement and buttons remain available alongside the selected Motion melee mode. While motion melee is set to Diagnostics or Live, the right trigger is reserved for it and native gamepad RT stays released, including in menus and for firearms. Set Motion melee to Off to restore RT. Return controls to neutral after changing this setting. Unchecked preserves gamepad-only behavior.")
 
+local turn = options:addComboBox("turnMode", "Stick turning")
+for _, label in ipairs({"Off", "Snap", "Smooth"}) do turn:addItem(label, label == "Off") end
+local angle = options:addComboBox("turnAngle", "Snap angle")
+for _, value in ipairs({15, 30, 45, 60, 90}) do angle:addItem(tostring(value) .. " degrees", value == 30) end
+options:addSlider("turnSpeed", "Smooth turn speed (degrees/second)", 30, 240, 15, 90)
+local source = options:addComboBox("turnSource", "Turning input")
+for _, label in ipairs({"Automatic", "VR controllers", "Assigned gamepad"}) do source:addItem(label, label == "Automatic") end
+local aim = options:addComboBox("turnAim", "Hold ready/aim")
+for _, label in ipairs({"Left trigger", "Left bumper / left grip", "Right bumper / right grip", "Right stick click"}) do aim:addItem(label, label == "Left trigger") end
+options:addDescription("While XR gameplay is active, reserve the right stick for horizontal turning and the selected binding for ready/aim. Automatic prefers the player's assigned physical gamepad, otherwise VR controllers. Snap once per deflection; center the stick to rearm. Menus retain native controls. Turning Off restores native aiming. Turning temporarily disarms motion melee; release the attack trigger after the turn to rearm. Return controls to neutral after settings changes.")
+
 local function sync()
     if not PZVRStereo or not PZVRStereo.setHotkeys then return end
+    if PZVRStereo.setTurning then
+        local angles = {15, 30, 45, 60, 90}
+        PZVRStereo.setTurning(options:getOption("turnMode"):getValue() - 1, angles[options:getOption("turnAngle"):getValue()], options:getOption("turnSpeed"):getValue(), options:getOption("turnSource"):getValue() - 1, options:getOption("turnAim"):getValue() - 1)
+    end
     local values = {}
     for _, row in ipairs(rows) do
         table.insert(values, options:getOption(row[1]):getValue())

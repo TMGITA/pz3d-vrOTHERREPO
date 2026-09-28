@@ -69,3 +69,4 @@ if($LASTEXITCODE -ne 0) { throw "Contact geometry tests failed." }
 if($LASTEXITCODE -ne 0) { throw 'Arm tracking checks failed.' }
 & "$PSScriptRoot\Test-Controllers.ps1"
 Write-Host "Harness evidence: $run"
+& "$PSScriptRoot\Test-Turning.ps1"

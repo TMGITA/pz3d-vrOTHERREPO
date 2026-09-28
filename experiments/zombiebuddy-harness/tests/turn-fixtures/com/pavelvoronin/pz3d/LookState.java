@@ -1,0 +1,1 @@
+package com.pavelvoronin.pz3d; public class LookState {public record View(float yaw,float pitch){}private static View view=new View(0,.2f);static View get(){return view;}static synchronized void reset(float yaw,float pitch){view=new View(yaw,pitch);}public static float yaw(){return view.yaw();}public static float pitch(){return view.pitch();}}

@@ -1,5 +1,17 @@
 # Harness validation
 
+## Stick turning and ready/aim (0.10.0, 2026-09-28)
+
+Adds Off/Snap/Smooth, 15/30/45/60/90-degree snap angles, smooth speed 30–240 degrees/second, input-source selection, and a separate held ready/aim binding. Automatic input prefers the assigned physical gamepad and otherwise uses existing OpenXR Touch input. Physical pads use configured native aiming axes; direct VR turning works without registering the virtual gamepad. All features are restricted to focused first-person XR gameplay and default Off.
+
+An additive Main.tick hook updates PZ3D's shared LookState yaw under its existing synchronization lock, preserving pitch and calibration. NativeAvatar.attackAim is extended with the separate ready input. Scoped Joypad methods consume the selected pad's aiming axes and chosen aim binding, including generic button queries; native menus and unowned pads retain input. Snap requires centering between deflections; focus/context/source/settings changes require neutral controls. Failures disable turning and release input ownership.
+
+Artificial turns disarm both motion-melee modes for the turn and 200 ms afterward. Motion melee requires attack-trigger release to rearm; pending contact resolution is rejected. This deliberately excludes simultaneous artificial turning and motion-melee attacks in the first implementation. Native button attacks retain their original path. No new controller interaction profiles or full-body tracking are introduced.
+
+The full harness suite passed, including rendering/XR lifecycle, 982 arm checks, 31 controller lifecycle checks, existing melee/geometry tests and actual copied-class retransformation without initialization. Three turning targets (two new classes and NativeAvatar shared with melee, thirteen unique target classes total) verified with the existing transforms. Evidence: `build/runs/20260928-190614-583/`. Final targeted turning tests passed 40 checks (`build/turn-test.log`) covering smooth timing, snap rearming, axis consumption, separate aim, native menu restoration, physical disconnect, direct VR input, settings/context changes, duplicate/missing hook rejection and preserved pitch. Contact tests passed 33 checks including turn suppression, release-to-rearm and pending-contact cancellation (`build/contact-turn-test.log`). Lua settings tests passed default/Apply/save/load checks for the new controls with mocked game services.
+
+The final package was rebuilt after the targeted guard refinements. No game/mod entrypoint was run or installed files modified. Live gamepad assignment, menu transitions, weapon ready stance, body/hand alignment and comfort remain user-test items. The native OpenXR action set and graphics submission are unchanged; no additional runtime smoke test was needed.
+
 ## Zomboid 42.21.0 / PZ3D 0.3.0 compatibility (0.9.1, 2026-09-28)
 
 The user's current console identifies Zomboid 42.21.0 and PZ3D 0.3.0; the VR mod is absent from the loader list. The locally installed prototype descriptor reports 0.4.0 and caps Zomboid at 42.20.4. Source 0.9.0 had the same game-version restriction. The installed ZombieBuddy JAR is byte-identical to the supported 2.3.2 copy despite the reported Workshop update. A separate subscribed temporary-fix mod is not the ZombieBuddy JAR identified in the current log and is not certified by this build.

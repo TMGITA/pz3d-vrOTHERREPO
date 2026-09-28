@@ -32,7 +32,7 @@ public final class MeleeRuntime {
         return type==WeaponType.ONE_HANDED || type==WeaponType.TWO_HANDED || type==WeaponType.HEAVY?w:null;
     }
     private static boolean access(IsoPlayer p) {
-        return installed && !faulted && MeleeInput.mode!=0 && !MeleeInput.uiBlocked && !GameClient.client && !GameServer.server
+        return !pzvr.turn.TurnRuntime.meleeBlocked() && installed && !faulted && MeleeInput.mode!=0 && !MeleeInput.uiBlocked && !GameClient.client && !GameServer.server
             && p.isLocalPlayer() && !p.isDead() && !GameTime.isGamePaused() && !Core.getInstance().isDoingTextEntry()
             && NativeAvatar.controls(p) && !p.isRunning() && !p.isSprinting() && p.getCharacterActions().isEmpty()
             && !p.isBannedAttacking() && p.isAuthorizedHandToHandAction() && p.isAuthorizedHandToHand() && p.canPerformHandToHandCombat();
@@ -40,7 +40,7 @@ public final class MeleeRuntime {
     private static void revoke() { MeleeInput.permit=null; MeleeInput.pending.set(null); }
     public static boolean aimActive() {
         MeleeInput.Permit p=MeleeInput.permit; MeleeInput.State s=MeleeInput.state; long now=System.nanoTime();
-        return installed && !faulted && MeleeInput.mode!=0 && !MeleeInput.uiBlocked && p!=null && now>=p.time() && now-p.time()<=MeleeInput.FRESH
+        return !pzvr.turn.TurnRuntime.meleeBlocked() && installed && !faulted && MeleeInput.mode!=0 && !MeleeInput.uiBlocked && p!=null && now>=p.time() && now-p.time()<=MeleeInput.FRESH
             && MeleeInput.fresh(s,now) && s.held();
     }
     /** Injected before NativeAvatar.beforeAnimation, on the existing simulation update. */

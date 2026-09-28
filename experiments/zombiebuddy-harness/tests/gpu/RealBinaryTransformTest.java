@@ -40,6 +40,9 @@ public final class RealBinaryTransformTest {
         if(!pzvr.melee.MeleeRuntime.installed) throw new AssertionError("Melee hooks unavailable");
         pzvr.input.ControllerInstallation.install(InstrumentationAgent.instrumentation,loader);
         if(!pzvr.input.ControllerBridge.installed) throw new AssertionError("Controller hooks unavailable");
+        pzvr.turn.TurnInstallation.install(InstrumentationAgent.instrumentation,loader);
+        if(!pzvr.turn.TurnRuntime.installed) throw new AssertionError("Turn hooks unavailable");
+        System.out.println("Turning copied-binary retransformation passed: 3 targets, including composition with melee NativeAvatar hooks.");
         System.out.println("Controller copied-binary retransformation passed: 3 classes without initialization.");
         System.out.println("Melee copied-binary retransformation passed: 4 additional classes, without initialization or combat execution.");
     }

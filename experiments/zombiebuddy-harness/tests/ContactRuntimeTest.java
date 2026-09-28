@@ -52,6 +52,13 @@ public final class ContactRuntimeTest {
   reset(4);p.enterImmediately=false;hits=CombatManager.impacts;swing();MeleeInput.state=new MeleeInput.State(System.nanoTime(),true,false);p.state=zombie.ai.states.SwipeStatePlayer.instance();p.set(zombie.ai.states.SwipeStatePlayer.ATTACKED,false);ContactRuntime.resolve(p);
   ok(CombatManager.impacts==hits,"tracking loss cancels pending contact");
   reset(4);var other=new IsoZombie();other.x=1;other.y=.45f;other.id=43;other.cell=p.cell;p.cell.objects.add(other);swing();ok(CombatManager.lastTarget==z,"first contacted target wins over later contact");
+  var turnGuard=pzvr.turn.TurnRuntime.class.getDeclaredField("meleeUntil");turnGuard.setAccessible(true);
+  reset(4);turnGuard.setLong(null,System.nanoTime()+1_000_000_000L);swing();ok(p.attempts==0,"artificial turning cannot start contact");
+  turnGuard.setLong(null,0);swing();ok(p.attempts==0,"trigger held after turn cannot rearm contact");
+  tick(false);swing();ok(p.attempts==1,"release after turn rearms contact");
+  reset(4);p.enterImmediately=false;hits=CombatManager.impacts;swing();turnGuard.setLong(null,System.nanoTime()+1_000_000_000L);
+  p.state=zombie.ai.states.SwipeStatePlayer.instance();p.set(zombie.ai.states.SwipeStatePlayer.ATTACKED,false);ContactRuntime.resolve(p);
+  ok(CombatManager.impacts==hits,"turn cancels pending contact resolution");turnGuard.setLong(null,0);
   System.out.println("Contact native adapter fixture checks passed: "+checks);
  }
 }

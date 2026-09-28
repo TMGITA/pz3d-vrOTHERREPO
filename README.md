@@ -1,6 +1,6 @@
 # PZ3D VR prototype
 
-Experimental OpenXR support for Project Zomboid through PZ3D and ZombieBuddy. Current release: **[v0.9.1 prerelease](https://github.com/kilroy94/pz3d-vr/releases/tag/v0.9.1)**, Windows x64, for Zomboid **42.21.0** and PZ3D **0.3.0**. The older v0.9.0 release targets Zomboid 42.20.4 / PZ3D 0.2.2.
+Experimental OpenXR support for Project Zomboid through PZ3D and ZombieBuddy. Current release: **[v0.10.0 prerelease](https://github.com/kilroy94/pz3d-vr/releases/tag/v0.10.0)**, Windows x64, for Zomboid **42.21.0** and PZ3D **0.3.0**. The older v0.9.0 release targets Zomboid 42.20.4 / PZ3D 0.2.2.
 
 The prototype now includes stereo headset rendering, head tracking, the vanilla UI in VR, tracked first-person arms and held items, optional VR-controller gamepad input, and two experimental motion-melee modes. It is under active development and is not a complete VR conversion.
 
@@ -31,9 +31,9 @@ Obtain these separately. This repository contains the prototype source and synth
 
 ## Using the prototype
 
-See the [mod instructions](experiments/zombiebuddy-harness/README.md) for installation, runtime setup, controls, and limitations. Download the [v0.9.1 prerelease](https://github.com/kilroy94/pz3d-vr/releases/tag/v0.9.1), or build it using the steps below. Do not use the older v0.9.0 release with the updated game.
+See the [mod instructions](experiments/zombiebuddy-harness/README.md) for installation, runtime setup, controls, and limitations. Download the [v0.10.0 prerelease](https://github.com/kilroy94/pz3d-vr/releases/tag/v0.10.0), or build it using the steps below. Do not use the older v0.9.0 release with the updated game.
 
-1. Close the game and extract `PZ3DVRTest-0.9.1.zip` into your local mods directory, normally `%USERPROFILE%\Zomboid\mods`. The descriptor should be at `PZ3DVRTest\42.20.4\mod.info`. Replace the old prototype folder when updating.
+1. Close the game and extract `PZ3DVRTest-0.10.0.zip` into your local mods directory, normally `%USERPROFILE%\Zomboid\mods`. The descriptor should be at `PZ3DVRTest\42.20.4\mod.info`. Replace the old prototype folder when updating.
 2. Enable ZombieBuddy, PZ3D, and **PZ3D Stereo Capture Test [Java]** for the test save. Approve the updated prototype JAR if ZombieBuddy prompts.
 3. Start your VR runtime, load the save, enter PZ3D with **Insert**, and use first person on foot. Toggle OpenXR with the shortcut below.
 4. Recenter while upright: press the shortcut, return both hands to the controllers, face forward, and hold a neutral pose during the five-second countdown.
@@ -63,7 +63,17 @@ Keyboard/mouse and native gamepad controls remain available. The optional **VR c
 
 Sticks and face buttons use native gamepad bindings; grips act as bumpers. Tapping left Menu sends Start; holding Menu with the left stick supplies a D-pad, and Menu + X supplies Back. The runtime may reserve Menu. See the [full control mapping](experiments/zombiebuddy-harness/README.md#touch-controllers-as-a-conventional-gamepad-080).
 
-The right stick retains native aiming/ready-stance behavior. Independent stick camera turning, snap turning, teleport locomotion, and a custom movement scheme are not implemented.
+### Stick turning and ready/aim (0.10.0)
+
+In **Options > Mods > PZ3D VR**, choose **Stick turning: Snap or Smooth** (default Off). Snap angles are 15?, 30?, 45?, 60?, or 90?; one sideways deflection produces one snap, and returning to center rearms it. Smooth speed is adjustable from 30?240?/second, default 90?, scaled by stick deflection. Vertical stick input does not pitch the camera.
+
+Turning works during focused, first-person XR gameplay with either VR thumbsticks or an assigned ordinary gamepad. **Turning input** can be Automatic, VR controllers, or Assigned gamepad. Automatic prefers an assigned physical gamepad; otherwise it reads the VR controllers directly, even with the gamepad bridge Off. Physical pads use their configured native aiming axes. Unselected controllers retain their native behavior.
+
+The selected right stick is reserved for turning. **Hold ready/aim** defaults to the left trigger, with left bumper/grip, right bumper/grip, and right-stick click alternatives. That binding is consumed during owned gameplay to avoid also invoking its native action; menus regain native input. Turning Off restores the original controls. Return controls to neutral after changing settings or resuming tracking.
+
+Artificial turning updates PZ3D's shared heading so movement, headset view and tracked items use the same base orientation; physical head tracking remains independent. It temporarily disarms both motion-melee modes while turning and for 200 ms afterward. Release the attack trigger after the turn to rearm. This first version does not support simultaneous stick turning and motion-melee attacks. Native button attacks retain their existing path.
+
+Teleport locomotion and a replacement movement scheme are not implemented. Turning speed, ready-stance behavior and menu transitions still need in-game/headset validation.
 
 ## Motion melee
 
@@ -114,7 +124,7 @@ Then build and run the local suite:
 powershell -NoProfile -ExecutionPolicy Bypass -File experiments/zombiebuddy-harness/Test.ps1
 ```
 
-This produces `experiments/zombiebuddy-harness/dist/PZ3DVRTest-0.9.1.zip`. The suite uses synthetic fixtures, copied-class inspection/retransformation without initialization, and standalone OpenGL checks. It does not install the mod or launch the game. Native OpenXR smoke tests are separate; see the harness instructions. Do not run a competing test scene while the game is using XR.
+This produces `experiments/zombiebuddy-harness/dist/PZ3DVRTest-0.10.0.zip`. The suite uses synthetic fixtures, copied-class inspection/retransformation without initialization, and standalone OpenGL checks. It does not install the mod or launch the game. Native OpenXR smoke tests are separate; see the harness instructions. Do not run a competing test scene while the game is using XR.
 
 ## Project layout
 

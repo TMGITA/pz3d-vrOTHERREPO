@@ -1,0 +1,1 @@
+package com.pavelvoronin.pz3d;public class Main {public static final Access access=new Access();public static class Access {public boolean look=true,combat=true;}static Access controlAccess(){return access;}public static void tick(){} }

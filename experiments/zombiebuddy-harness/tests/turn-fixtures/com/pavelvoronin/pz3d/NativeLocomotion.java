@@ -1,0 +1,1 @@
+package com.pavelvoronin.pz3d; public class NativeLocomotion {public static boolean first=true;public static boolean firstPerson(zombie.characters.IsoGameCharacter p){return first;}}

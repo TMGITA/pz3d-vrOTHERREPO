@@ -1,0 +1,1 @@
+package com.pavelvoronin.pz3d; public class NativeAvatar {public static boolean controls(zombie.characters.IsoGameCharacter p){return true;}public static boolean attackAim(){return false;}}

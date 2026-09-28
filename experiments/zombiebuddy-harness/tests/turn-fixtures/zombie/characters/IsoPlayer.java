@@ -1,0 +1,1 @@
+package zombie.characters; public class IsoPlayer extends IsoGameCharacter { public static final IsoPlayer instance=new IsoPlayer();public int bind=0;public boolean dead;public static IsoPlayer getInstance(){return instance;}public int getJoypadBind(){return bind;}public boolean isDead(){return dead;} }

@@ -43,6 +43,7 @@ public final class XrHarness {
     }
     public static void stop(String reason) {
         active=false;
+        pzvr.turn.TurnRuntime.heartbeat(false);
         pzvr.input.ControllerBridge.clear();
         pzvr.melee.MeleeInput.reset();
         recenterCountdown.cancel();
@@ -68,6 +69,7 @@ public final class XrHarness {
                 // A runtime reference-space change reanchors the camera; it is not a user
                 // request to learn a new controller-to-hand orientation from an arbitrary pose.
                 if(session.consumeRecenter()) { camera.recenter(); pzvr.melee.MeleeInput.reset(); }
+                pzvr.turn.TurnRuntime.heartbeat(session.focused() && !recenterCountdown.pending());
                 HandPoses hands=armPreview?TrackedArms.synthetic(head,System.nanoTime()*1e-9):session.hands();
                 boolean tracked=((recenterHands&1)==0 || hands.left()!=null) && ((recenterHands&2)==0 || hands.right()!=null);
                 if(recenterCountdown.update(System.nanoTime(),session.focused() && tracked)) {
@@ -75,7 +77,7 @@ public final class XrHarness {
                     pzvr.melee.MeleeInput.reset();
                 }
                 pzvr.melee.MeleeInput.sample(System.nanoTime(),session.handPoseTime(),hands.right(),head,session.combatHeld(),
-                    session.focused() && session.combatTracking() && !armPreview && !recenterCountdown.pending());
+                    session.focused() && session.combatTracking() && !pzvr.turn.TurnRuntime.meleeBlocked() && !armPreview && !recenterCountdown.pending());
                 mirror.beginPair(); invoked[0]=true;
                 FrameTiming timing=session.timing();
                 PairHooks.render(verified,frame,fresh,camera.eyes(head,views),new PairHooks.Sink() {

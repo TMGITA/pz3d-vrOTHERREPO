@@ -31,7 +31,7 @@ public final class ContactRuntime {
         return p.getPrimaryHandItem() instanceof HandWeapon w&&"Base.BaseballBat".equals(w.getFullType())&&!w.isRanged()&&w.getCondition()>0?w:null;
     }
     private static boolean access(IsoPlayer p){
-        return MeleeRuntime.installed&&!faulted&&MeleeInput.mode>=3&&!MeleeInput.uiBlocked&&!GameClient.client&&!GameServer.server
+        return !pzvr.turn.TurnRuntime.meleeBlocked()&&MeleeRuntime.installed&&!faulted&&MeleeInput.mode>=3&&!MeleeInput.uiBlocked&&!GameClient.client&&!GameServer.server
             &&p.isLocalPlayer()&&!p.isDead()&&!GameTime.isGamePaused()&&!zombie.core.Core.getInstance().isDoingTextEntry()
             &&NativeAvatar.controls(p)&&!p.isRunning()&&!p.isSprinting()&&p.getCharacterActions().isEmpty()&&!p.isBannedAttacking()
             &&p.isAuthorizedHandToHand()&&p.isAuthorizedHandToHandAction()&&p.canPerformHandToHandCombat();

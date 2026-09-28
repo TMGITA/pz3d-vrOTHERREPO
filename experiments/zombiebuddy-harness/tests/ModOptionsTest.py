@@ -26,6 +26,7 @@ local core = {isDoingTextEntry=function() return typing == true end}
 function getCore() return core end
 MainOptions = {instance={isVisible=function() return visible == true end}}
 PZVRStereo = {
+    setTurning=function(...) turning={...} end,
     setHotkeys=function(...) applied={...}; syncCount=(syncCount or 0)+1 end,
     blockHotkeys=function(value) blocked=value end,
     setArmReachPercent=function(value) armReach=value end,
@@ -61,6 +62,14 @@ assert(options.name == "PZ3D VR")
 Events.OnMainMenuEnter.fire()
 assert(applied[1]==70 and applied[2]==3 and applied[4]==7 and applied[6]==5 and applied[7]==68)
 assert(armReach==150)
+assert(turning[1]==0 and turning[2]==30 and turning[3]==90 and turning[4]==0 and turning[5]==0)
+options:getOption("turnMode"):setValue(3)
+options:getOption("turnAngle"):setValue(4)
+options:getOption("turnSpeed"):setValue(120)
+options:getOption("turnSource"):setValue(3)
+options:getOption("turnAim"):setValue(4)
+options:apply()
+assert(turning[1]==2 and turning[2]==60 and turning[3]==120 and turning[4]==2 and turning[5]==3)
 assert(meleeMode==0)
 assert(controllerMode==0)
 assert(hybrid==false)
@@ -82,6 +91,7 @@ options:getOption("meleeMode"):setValue(2)
 options:getOption("controllerMode"):setValue(4)
 options:getOption("allowMotionMeleeWithGamepad"):setValue(true)
 options:apply(); assert(armReach==125)
+assert(turning[1]==2 and turning[2]==60 and turning[3]==120 and turning[4]==2 and turning[5]==3)
 assert(meleeMode==1)
 assert(controllerMode==3)
 assert(hybrid==true)
@@ -98,6 +108,7 @@ options:getOption("allowMotionMeleeWithGamepad"):setValue(false)
 PZAPI.ModOptions:load()
 assert(applied[1]==30 and applied[2]==0 and applied[7]==0)
 assert(armReach==125)
+assert(turning[1]==2 and turning[2]==60 and turning[3]==120 and turning[4]==2 and turning[5]==3)
 assert(meleeMode==1)
 assert(controllerMode==3)
 assert(hybrid==true)
