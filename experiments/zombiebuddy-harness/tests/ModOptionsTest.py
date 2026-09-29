@@ -59,6 +59,8 @@ lua.execute(script)
 lua.execute(r'''
 local options=PZAPI.ModOptions.Dict.PZ3DVRTest
 assert(options.name == "PZ3D VR")
+-- MainOptions passes slider names through getText; raw percent breaks missing-label formatting.
+assert(not string.find(options:getOption("armReachPercent").name, "%", 1, true))
 Events.OnMainMenuEnter.fire()
 assert(applied[1]==70 and applied[2]==3 and applied[4]==7 and applied[6]==5 and applied[7]==68)
 assert(armReach==150)

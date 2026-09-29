@@ -1,6 +1,6 @@
 # PZ3D VR prototype
 
-Experimental OpenXR support for Project Zomboid through PZ3D and ZombieBuddy. Current release: **[v0.10.0 prerelease](https://github.com/kilroy94/pz3d-vr/releases/tag/v0.10.0)**, Windows x64, for Zomboid **42.21.0** and PZ3D **0.3.0**. The older v0.9.0 release targets Zomboid 42.20.4 / PZ3D 0.2.2.
+Experimental OpenXR support for Project Zomboid through PZ3D and ZombieBuddy. Current release: **[v0.10.1 prerelease](https://github.com/kilroy94/pz3d-vr/releases/tag/v0.10.1)**, Windows x64, for Zomboid **42.21.0** and PZ3D **0.3.0**. The older v0.9.0 release targets Zomboid 42.20.4 / PZ3D 0.2.2.
 
 The prototype now includes stereo headset rendering, head tracking, the vanilla UI in VR, tracked first-person arms and held items, optional VR-controller gamepad input, and two experimental motion-melee modes. It is under active development and is not a complete VR conversion.
 
@@ -25,15 +25,15 @@ The harness checks exact binary hashes for these versions:
 
 - Project Zomboid **42.21.0**
 - PZ3D **0.3.0**
-- ZombieBuddy **2.3.2**
+- ZombieBuddy **2.3.2**, either the original pinned JAR or the specifically verified **B42.21 temporary-fix** JAR. Unknown/rebuilt variants remain unsupported.
 
 Obtain these separately. This repository contains the prototype source and synthetic test fixtures, not copies of the game or either dependency. Headset output requires a working OpenXR runtime, such as SteamVR configured for OpenXR. Desktop stereo does not require a headset or VR runtime. Start with a disposable single-player save, in first person and on foot.
 
 ## Using the prototype
 
-See the [mod instructions](experiments/zombiebuddy-harness/README.md) for installation, runtime setup, controls, and limitations. Download the [v0.10.0 prerelease](https://github.com/kilroy94/pz3d-vr/releases/tag/v0.10.0), or build it using the steps below. Do not use the older v0.9.0 release with the updated game.
+See the [mod instructions](experiments/zombiebuddy-harness/README.md) for installation, runtime setup, controls, and limitations. Download the [v0.10.1 prerelease](https://github.com/kilroy94/pz3d-vr/releases/tag/v0.10.1), or build it using the steps below. Older releases do not accept the ZombieBuddy B42.21 temporary-fix JAR. Do not use the older v0.9.0 release with the updated game.
 
-1. Close the game and extract `PZ3DVRTest-0.10.0.zip` into your local mods directory, normally `%USERPROFILE%\Zomboid\mods`. The descriptor should be at `PZ3DVRTest\42.20.4\mod.info`. Replace the old prototype folder when updating.
+1. Close the game and extract `PZ3DVRTest-0.10.1.zip` into your local mods directory, normally `%USERPROFILE%\Zomboid\mods`. The descriptor should be at `PZ3DVRTest\42.20.4\mod.info`. Replace the old prototype folder when updating.
 2. Enable ZombieBuddy, PZ3D, and **PZ3D Stereo Capture Test [Java]** for the test save. Approve the updated prototype JAR if ZombieBuddy prompts.
 3. Start your VR runtime, load the save, enter PZ3D with **Insert**, and use first person on foot. Toggle OpenXR with the shortcut below.
 4. Recenter while upright: press the shortcut, return both hands to the controllers, face forward, and hold a neutral pose during the five-second countdown.
@@ -55,7 +55,7 @@ OpenXR automatically includes the vanilla UI as a transparent, head-following pa
 
 Controller grip poses drive the first-person arms, with estimated palm alignment and held-item attachment updates. Calibration is retained through tracking loss and dashboard interruptions. Physical headset height changes move the shoulder roots, so kneeling lowers the arms; this does not change the game's crouch state or add full-body IK.
 
-**Options > Mods > PZ3D VR > Maximum arm reach (%)** controls bounded arm extension: 150% by default, adjustable from 100% to 175%. Hands and held items retain their size; larger extensions can stretch sleeves and elbows. This does not increase native melee range. The contact pilot uses the rendered bat position but retains its own reach checks. Two-handed items follow their native owning hand; a support-hand constraint is not implemented.
+**Options > Mods > PZ3D VR > Maximum arm reach (percent)** controls bounded arm extension: 150% by default, adjustable from 100% to 175%. Hands and held items retain their size; larger extensions can stretch sleeves and elbows. This does not increase native melee range. The contact pilot uses the rendered bat position but retains its own reach checks. Two-handed items follow their native owning hand; a support-hand constraint is not implemented.
 
 ## Movement and controller input
 
@@ -124,7 +124,7 @@ Then build and run the local suite:
 powershell -NoProfile -ExecutionPolicy Bypass -File experiments/zombiebuddy-harness/Test.ps1
 ```
 
-This produces `experiments/zombiebuddy-harness/dist/PZ3DVRTest-0.10.0.zip`. The suite uses synthetic fixtures, copied-class inspection/retransformation without initialization, and standalone OpenGL checks. It does not install the mod or launch the game. Native OpenXR smoke tests are separate; see the harness instructions. Do not run a competing test scene while the game is using XR.
+This produces `experiments/zombiebuddy-harness/dist/PZ3DVRTest-0.10.1.zip`. The suite uses synthetic fixtures, copied-class inspection/retransformation without initialization, and standalone OpenGL checks. It does not install the mod or launch the game. Native OpenXR smoke tests are separate; see the harness instructions. Do not run a competing test scene while the game is using XR.
 
 ## Project layout
 

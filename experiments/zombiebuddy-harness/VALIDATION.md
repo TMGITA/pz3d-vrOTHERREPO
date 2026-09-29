@@ -1,5 +1,15 @@
 # Harness validation
 
+## Loaded ZombieBuddy temporary fix and Mods slider label (0.10.1)
+
+The user's 0.10.0 game log rejects the actually loaded game-root ZombieBuddy.jar with SHA-256 `dd13e6e06e64be0e832a4f13508c6872de36c9c7b2290023c5884a7f74467283` before renderer/XR initialization. It matches the subscribed B42.21 temporary-fix JAR, not the original Workshop 2.3.2 binary checked during the earlier compatibility update. The null SteamVR server/compositor are running and its server log identifies the existing null HMD; this does not prove a game XR session.
+
+Read-only archive comparison found fifteen differing entries, confined to Loader/nested classes, ZomboidFileSystem patches and signature/manifest metadata. The ASM and Lua exposure classes are unchanged. Inspection shows the temporary fix adapts mod-loading List signatures; the static instrumentation handle used by our bridge retains its contract. Both exact hashes are now accepted, with game/PZ3D pins unchanged. This is compatibility verification, not execution or general certification of the third-party loader.
+
+The same console reports an UnknownFormatConversionException for `)` through Translator.getText while MainOptions.lua:3025 constructs a slider. Our literal `Maximum arm reach (%)` label follows that path. Replaced it with `Maximum arm reach (percent)`; saved setting ID/value remain unchanged.
+
+Full harness regression passed: `build/runs/20260928-195523-457/`, with 40 turning, 33 contact, 982 arm and 31 controller checks plus the existing suites. Separate `Test-ZombieBuddy.ps1` passed acceptance of both pinned variants, rejection of unknown loader/game data, and all thirteen unique copied target transformations with the temporary-fix JAR on the classpath. The actual Loader instrumentation field was inspected without initialization (`build/zb-variants.log`, `build/zb-fix-transform.log`). Lua settings tests passed, including a literal-percent slider-label regression. No game/loader entrypoint was run and no installed files or running runtime were modified. User restart and in-game confirmation remain required.
+
 ## Stick turning and ready/aim (0.10.0, 2026-09-28)
 
 Adds Off/Snap/Smooth, 15/30/45/60/90-degree snap angles, smooth speed 30–240 degrees/second, input-source selection, and a separate held ready/aim binding. Automatic input prefers the assigned physical gamepad and otherwise uses existing OpenXR Touch input. Physical pads use configured native aiming axes; direct VR turning works without registering the virtual gamepad. All features are restricted to focused first-person XR gameplay and default Off.

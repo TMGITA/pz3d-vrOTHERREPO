@@ -7,6 +7,9 @@ import pzvr.harness.Installation;
 public final class RealBinaryTransformTest {
     public static void main(String[] args) throws Exception {
         VersionGate.verify(Path.of(args[0]),Path.of(args[1]),Path.of(args[2]));
+        Class<?> zbLoader=Class.forName("me.zed_0xff.zombie_buddy.Loader",false,RealBinaryTransformTest.class.getClassLoader());
+        var instrumentation=zbLoader.getDeclaredField("g_instrumentation");
+        if(instrumentation.getType()!=java.lang.instrument.Instrumentation.class || !java.lang.reflect.Modifier.isStatic(instrumentation.getModifiers())) throw new AssertionError("ZombieBuddy instrumentation contract");
         Map<String,byte[]> originals=new HashMap<>();
         try(JarFile jar=new JarFile(args[1])) {
             for(String name:Installation.TARGETS) try(var in=jar.getInputStream(jar.getJarEntry(name+".class"))) { originals.put(name,in.readAllBytes()); }

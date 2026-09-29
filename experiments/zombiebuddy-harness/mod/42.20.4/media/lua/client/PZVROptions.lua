@@ -16,7 +16,7 @@ for _, row in ipairs(rows) do
 end
 options:addDescription("Hold the selected modifiers before pressing the key. Extra modifiers do not match. Choose keys that do not conflict with your game or other mods; these shortcuts do not consume native controls.")
 options:addSeparator()
-options:addSlider("armReachPercent", "Maximum arm reach (%)", 100, 175, 5, 150)
+options:addSlider("armReachPercent", "Maximum arm reach (percent)", 100, 175, 5, 150)
 options:addDescription("Arms extend only when needed to reach the tracked controllers, up to this percentage of the character's normal arm length. Hands and items keep their size. 100 restores the original reach limit. Higher limits can visibly stretch sleeves and elbows.")
 options:addSeparator()
 local melee = options:addComboBox("meleeMode", "Motion melee prototype")
