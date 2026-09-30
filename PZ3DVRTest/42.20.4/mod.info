@@ -1,0 +1,12 @@
+name=PZ3D Stereo Capture Test [Java]
+id=PZ3DVRTest
+author=Local prototype
+modversion=0.10.1
+versionMin=42.21.0
+versionMax=42.21.0
+require=\ZombieBuddy,pz3d
+javaJarFile=media/java/client/PZ3DVRTest.jar
+javaPkgName=pzvr.harness
+ZBVersionMin=2.3.2
+ZBVersionMax=2.3.2
+description=Experimental VR, palm-centered arm IK and tracked held items for PZ3D 0.3.0. First person, on foot, single player. Remap shortcuts in Options > Mods > PZ3D VR. Default shortcuts: Ctrl+Shift+Scroll Lock toggles OpenXR; Ctrl+Shift+Alt+Scroll Lock recenters; Ctrl+Alt+Scroll Lock toggles synthetic arm waving in XR; Ctrl+Alt+Scroll Lock toggles desktop stereo. Press Ctrl+Shift+F10 to save one left/right pair under Zomboid/PZ3D-VR-Test. Desktop stereo needs no headset. OpenXR requires a working runtime or simulated SteamVR. Arm tracking changes visuals; optional motion melee requests native weapon attacks. This is not a playable VR mod.
