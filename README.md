@@ -1,3 +1,17 @@
+HOW TO PLAY
+(read this after reading everything else)
+After installing all dependecies, book up steamVR, make sure to set it as main OpenXR or whatever in settings > openXR
+Boot up PZ with the mods.
+press esc, settings > mods
+enable Vr controller support
+go back to PZ, enter 3D mode, go to first person
+press shift + ctrl + scroll block
+VR MODE ACTIVATED
+press A on your vr controller, in the top left a little menu should appear.
+press "take over player 1"
+done
+
+
 # PZ3D VR prototype
 
 Experimental OpenXR support for Project Zomboid through PZ3D and ZombieBuddy. Current release: **[v0.10.1 prerelease](https://github.com/kilroy94/pz3d-vr/releases/tag/v0.10.1)**, Windows x64, for Zomboid **42.21.0** and PZ3D **0.3.0**. The older v0.9.0 release targets Zomboid 42.20.4 / PZ3D 0.2.2.
